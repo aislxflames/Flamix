@@ -1,0 +1,29 @@
+### 
+
+POST http://localhost:3000/project HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Lol"
+}
+
+
+### 
+
+POST http://localhost:3000/project/Hello/container HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "frontend",
+  "image": "flame-portfolio:latest",
+  "env": {
+    "NODE_ENV": "PRODUCTION"
+  },
+  "ports": [
+    {
+      "iPort": 3000,
+      "ePort": 3000
+    }
+  ]
+}
+
