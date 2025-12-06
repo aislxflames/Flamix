@@ -8,6 +8,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dockerService } from "./services/docker.service.js";
 import { railPack } from "./services/railpack.service.js";
+import { composeService } from "./services/compose.service.js";
+import { proxyService } from "./services/proxy.service.js";
 
 dotenv.config();
 
@@ -25,9 +27,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 app.get("/test", (req, res) => {
   res.sendFile(join(__dirname, "index.html"));
 });
-app.get("/gg", (req, res) => {
-  railPack.install();
-  railPack.build("/run/media/devhub/Projects/flamenodes-website");
+app.get("/gg", async (req, res) => {
+  // railPack.install();
+  // railPack.build("/run/media/devhub/Projects/flamenodes-website");
+  // await dockerService.stop("flamenodes");
+  // await composeService.create(
+  //   "flamenodes",
+  //   "flamenodes-website:latest",
+  //   "test.localhost",
+  //   3000,
+  // );
+  await dockerService.start("flamenodes");
+
+  proxyService.install();
 });
 
 io.on("connection", (socket) => {

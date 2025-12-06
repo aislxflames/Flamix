@@ -1,3 +1,14 @@
+import { dockerService } from "./docker.service.js";
+import pathModule from "path";
+import fs from "fs";
+import { runCmd } from "./command.service.js";
+
+class ProxyService {
+  async install() {
+    const proxyPath = `/opt/flamix/proxy`;
+    fs.mkdirSync(proxyPath, { recursive: true });
+
+    const composeYml = `
 version: "3.9"
 
 services:
@@ -35,22 +46,19 @@ services:
 
     networks:
       - flamix-proxy
-  # app:
-  #   build: .
-  #   container_name: my-app
-  #   networks:
-  #     - proxy
-  #   labels:
-  #     - "traefik.enable=true"
-  #
-  #     # Router (your domain)
-  #     - "traefik.http.routers.myapp.rule=Host(`your-domain.com`)"
-  #     - "traefik.http.routers.myapp.entrypoints=websecure"
-  #     - "traefik.http.routers.myapp.tls.certresolver=myresolver"
-  #
-  #     # Forward internal port (like 3000 or whatever your app uses)
-  #     - "traefik.http.services.myapp.loadbalancer.server.port=3000"
 
 networks:
   flamix-proxy:
     external: true
+`;
+
+    fs.writeFileSync(
+      pathModule.join(proxyPath, "docker-compose.yml"),
+      composeYml,
+    );
+
+    runCmd(`cd ${proxyPath} && docker compose up`, "test");
+  }
+}
+
+export const proxyService = new ProxyService();
