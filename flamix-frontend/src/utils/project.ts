@@ -22,5 +22,10 @@ export async function createProject(projectName: string) {
 }
 
 export async function fetchAllProjects() {
-  const
+  try {
+    const res = await fetch(`http://localhost:5000/api/v1/projects`);
+
+    const data = await res.json();
+    return data;
+  } catch (e) { }
 }
