@@ -1,5 +1,6 @@
+"use client";
+
 import { IconFolderCode } from "@tabler/icons-react";
-import { ArrowUpRightIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +11,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import CreateProject from "./CreateProject";
+import { useState } from "react";
 
 export function EmptyProject() {
+  const [open, setOpen] = useState(false);
+
   return (
     <Empty>
       <EmptyHeader>
@@ -26,20 +31,10 @@ export function EmptyProject() {
       </EmptyHeader>
       <EmptyContent>
         <div className="flex gap-2">
-          <Button>Create Project</Button>
-          <Button variant="outline">Import Project</Button>
+          <Button onClick={() => setOpen(true)}>Create Project</Button>
+          <CreateProject open={open} setOpen={setOpen}></CreateProject>
         </div>
       </EmptyContent>
-      <Button
-        variant="link"
-        asChild
-        className="text-muted-foreground"
-        size="sm"
-      >
-        <a href="#">
-          Learn More <ArrowUpRightIcon />
-        </a>
-      </Button>
     </Empty>
   );
 }

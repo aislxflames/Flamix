@@ -1,17 +1,27 @@
 import { runCmd } from "./command.service.js";
 
 class DockerService {
-  async start(id: String) {
-    runCmd(`docker start ${id}`, "test");
+  start(id: string, channel: string) {
+    return runCmd(`docker start ${id}`, channel);
   }
-  async stop(id: String) {
-    runCmd(`docker stop ${id}`, "test");
+
+  stop(id: string, channel: string) {
+    return runCmd(`docker stop ${id}`, channel);
   }
-  async run(id: String) {
-    runCmd(`docker run ${id}`, "test");
+  delete(id: string, channel: string) {
+    return runCmd(`docker rm ${id}`, channel);
   }
-  async pull(id: String) {
-    runCmd(`docker pull ${id}`, "test");
+
+  run(id: string, channel: string) {
+    return runCmd(`docker run ${id}`, channel);
+  }
+
+  pull(id: string, channel: string) {
+    return runCmd(`docker pull ${id}`, channel);
+  }
+
+  watchLogs(id: string, channel: string) {
+    return runCmd(`docker logs --tail 500 -f ${id}`, channel);
   }
 }
 

@@ -1,15 +1,7 @@
 import Dashbaoard from "./dashboard/page";
 
 const Home = () => {
-  return (
-    <>
-      <Dashbaoard />
-    </>
-  );
+  return <></>;
 };
 
 export default Home;
-
-
-
-

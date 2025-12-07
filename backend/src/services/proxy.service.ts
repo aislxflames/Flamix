@@ -3,8 +3,10 @@ import pathModule from "path";
 import fs from "fs";
 import { runCmd } from "./command.service.js";
 
+const proxyName = "traefik";
+
 class ProxyService {
-  async install() {
+  async install(channel: string) {
     const proxyPath = `/opt/flamix/proxy`;
     fs.mkdirSync(proxyPath, { recursive: true });
 
@@ -14,7 +16,7 @@ version: "3.9"
 services:
   traefik:
     image: traefik:v2.11
-    container_name: traefik
+    container_name: ${proxyName} 
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -57,7 +59,20 @@ networks:
       composeYml,
     );
 
-    runCmd(`cd ${proxyPath} && docker compose up`, "test");
+    await runCmd(`cd ${proxyPath} && docker compose up`, channel);
+  }
+
+  async stop(channel: string) {
+    await dockerService.stop(proxyName, channel);
+  }
+  async start(channel: string) {
+    await dockerService.start(proxyName, channel);
+  }
+  async delete(channel: string) {
+    await dockerService.delete(proxyName, channel);
+  }
+  async log(channel: string) {
+    await dockerService.watchLogs(proxyName, channel);
   }
 }
 

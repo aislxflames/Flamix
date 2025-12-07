@@ -1,12 +1,13 @@
 import { runCmd } from "./command.service.js";
 
 class GitService {
-  async clone(url: string, path?: string) {
-    runCmd(`git clone ${url} ${path}`, "test");
+  async clone(url: string, path?: string, channel: string) {
+    await runCmd(`mkdir -p ${path}`, channel);
+    await runCmd(`git clone ${url} ${path}`, channel);
   }
-  async pull(dir?: string) {
-    runCmd(`git pull ${dir}`, "test");
+  async pull(dir?: string, channel: string) {
+    runCmd(`git pull ${dir}`, channel);
   }
 }
 
-const gitService = new GitService();
+export const gitService = new GitService();

@@ -1,6 +1,7 @@
-import fs from "fs";
+import fs from "fs/promises";
 import pathModule from "path";
 import { runCmd } from "./command.service.js";
+import { convertEnvToEnvFile } from "../utils/convertEnv.js";
 
 class ComposeService {
   async up(name: string) {
@@ -8,53 +9,110 @@ class ComposeService {
     runCmd(`cd ${projectPath} && docker compose up -d`, "test");
   }
 
+  buildDomainsRule(domains: string[]) {
+    if (!domains || domains.length === 0) return "`localhost`";
+    return domains.map((d) => `\`${d}\``).join(", ");
+  }
+
   /**
-   * Creates a project folder + docker-compose.yml
-   * @param name    project name / folder name
-   * @param image   docker image name
-   * @param domain  domain for traefik
-   * @param internalPort container internal port
+   * Creates project folder + docker-compose.yml + env file
    */
   async create(
     name: string,
+    containerName: string,
     image: string,
-    domain: string,
+    env: any,
+    domains: string[],
     internalPort: number,
+    projectPath: string,
+    channel: string,
   ) {
-    const projectPath = `/opt/flamix/projects/${name}`;
+    await fs.mkdir(projectPath, { recursive: true });
 
-    // 1. Create folder
-    fs.mkdirSync(projectPath, { recursive: true });
+    const domainRule = this.buildDomainsRule(domains);
+    const envFile = convertEnvToEnvFile(env);
 
-    // 2. Compose file content
     const composeYml = `
 version: "3.9"
 services:
   app:
     image: ${image}
-    container_name: ${name}
+    env_file:
+      - ./container.env
+    container_name: ${name}-${containerName}
+    ports:
+      - "${internalPort}"
     networks:
       - flamix-proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${name}.rule=Host(\`${domain}\`)"
+      - "traefik.http.routers.${name}.rule=Host(${domainRule})"
       - "traefik.http.routers.${name}.entrypoints=websecure"
       - "traefik.http.routers.${name}.tls.certresolver=myresolver"
       - "traefik.http.services.${name}.loadbalancer.server.port=${internalPort}"
     restart: always
+
 networks:
   flamix-proxy:
     external: true
 `;
 
-    // 3. Write docker-compose.yml
-    fs.writeFileSync(
+    await fs.writeFile(
       pathModule.join(projectPath, "docker-compose.yml"),
       composeYml,
     );
 
-    // 4. Start the container
-    runCmd(`cd ${projectPath} && docker compose up`, "test");
+    await fs.writeFile(pathModule.join(projectPath, "container.env"), envFile);
+
+    await runCmd(`cd ${projectPath} && docker compose up -d`, channel);
+  }
+
+  /**
+   * Rewrites compose + env file on update
+   */
+  async rewrite(
+    name: string,
+    containerName: string,
+    image: string,
+    env: any,
+    domains: string[],
+    internalPort: number,
+    projectPath: string,
+  ) {
+    const domainRule = this.buildDomainsRule(domains);
+    const envFile = convertEnvToEnvFile(env);
+
+    const composeYml = `
+version: "3.9"
+services:
+  app:
+    image: ${image}
+    env_file:
+      - ./container.env
+    container_name: ${name}-${containerName}
+    ports:
+      - "${internalPort}"
+    networks:
+      - flamix-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${name}.rule=Host(${domainRule})"
+      - "traefik.http.routers.${name}.entrypoints=websecure"
+      - "traefik.http.routers.${name}.tls.certresolver=myresolver"
+      - "traefik.http.services.${name}.loadbalancer.server.port=${internalPort}"
+    restart: always
+
+networks:
+  flamix-proxy:
+    external: true
+`;
+
+    await fs.writeFile(
+      pathModule.join(projectPath, "docker-compose.yml"),
+      composeYml,
+    );
+
+    await fs.writeFile(pathModule.join(projectPath, "container.env"), envFile);
   }
 }
 

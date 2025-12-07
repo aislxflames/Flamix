@@ -5,10 +5,11 @@ import connectDB from "../utils/connectDB.js";
 export const createProject = async (req: Request, res: Response) => {
   try {
     connectDB();
-    const { name } = req.body;
+    const { projectName, env } = req.body;
 
     const project = await Project.create({
-      projectName: name,
+      projectName: projectName,
+      env: env,
       containers: [],
     });
 
@@ -36,4 +37,19 @@ export const getProject = async (req: Request, res: Response) => {
     const project = await Project.findOne({ projectName: projectName });
     res.send(project);
   } catch (err) { }
+};
+
+export const deleteProject = async (req: Request, res: Response) => {
+  try {
+    connectDB();
+    const { projectName } = req.params;
+    const project = await Project.deleteOne({ projectName });
+    res.send({
+      success: true,
+      message: "Project created successfully",
+      project: project,
+    });
+  } catch (e) {
+    res.send({ success: false, message: "Project dosen't exists." });
+  }
 };

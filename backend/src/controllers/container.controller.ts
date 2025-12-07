@@ -1,45 +1,348 @@
 import type { Request, Response } from "express";
 import { Project } from "../models/project.model.js";
 import connectDB from "../utils/connectDB.js";
+import { composeService } from "../services/compose.service.js";
+import { runCmd } from "../services/command.service.js";
+import { deployService } from "../services/deploy.service.js";
+import { dockerService } from "../services/docker.service.js";
+
+const updateStatus = async (
+  project: any,
+  containerName: string,
+  status: string,
+) => {
+  const container = project.containers.find(
+    (c: any) => c.name === containerName,
+  );
+  if (!container) return;
+  container.status = status;
+  await project.save();
+};
 
 export const createContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName } = req.params;
-    const { name, image, env, ports } = req.body;
+    let { name, image, env, ports, gitUrl, domains } = req.body;
+
     const project = await Project.findOne({ projectName });
     if (!project) {
       return res
         .status(404)
         .json({ success: false, message: "Project not found" });
     }
+
+    if (!image || image.trim() === "") {
+      image = `${projectName}-${name}`;
+    }
+
     project.containers.push({
       name,
       image,
       env,
       ports,
+      gitUrl,
+      domains,
+      status: "Stopped", // default
     });
+
     await project.save();
-    res
-      .status(201)
-      .json({ success: true, message: "Container Created Successfully" });
+
+    res.status(201).json({
+      success: true,
+      message: "Container created successfully",
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error });
+    res.status(500).json({ success: false, error });
+  }
+};
+
+export const deleteContainer = async (req: Request, res: Response) => {
+  try {
+    connectDB();
+    const { projectName, containerName } = req.params;
+
+    const project = await Project.findOne({ projectName });
+    if (!project)
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+
+    const index = project.containers.findIndex((c) => c.name === containerName);
+    if (index === -1) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Container not found" });
+    }
+
+    project.containers.splice(index, 1);
+    await project.save();
+
+    const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
+
+    const channel = `${projectName}-${containerName}`;
+    await dockerService.stop(channel, channel);
+    await dockerService.delete(`${projectName}-${containerName}`, channel);
+    await runCmd(`rm -rf ${projectPath}`, channel);
+
+    res.json({
+      success: true,
+      message: "Container deleted successfully",
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Container not found.", error });
   }
 };
 
 export const getAllContainer = async (req: Request, res: Response) => {
-  connectDB();
-  const { projectName } = req.params;
-  const project = await Project.findOne({ projectName });
-  res.send(project.containers);
+  try {
+    connectDB();
+    const { projectName } = req.params;
+    const project = await Project.findOne({ projectName });
+
+    if (!project) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+    }
+
+    res.json({
+      success: true,
+      containers: project.containers,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Container not found.", error });
+  }
 };
 
 export const getContainer = async (req: Request, res: Response) => {
-  connectDB();
-  const { projectName, containerName } = req.params;
-  const project = await Project.findOne({ projectName });
-  const container = project?.containers.find((c) => c.name === containerName);
+  try {
+    connectDB();
+    const { projectName, containerName } = req.params;
 
-  res.send(container);
+    const project = await Project.findOne({ projectName });
+    if (!project) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+    }
+
+    const container = project.containers.find((c) => c.name === containerName);
+
+    if (!container) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Container not found" });
+    }
+
+    res.json({
+      success: true,
+      container,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Container not found.", error });
+  }
+};
+
+export const startContainer = async (req: Request, res: Response) => {
+  try {
+    connectDB();
+    const { projectName, containerName } = req.params;
+
+    const project = await Project.findOne({ projectName });
+    if (!project)
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+
+    const container = project.containers.find((c) => c.name === containerName);
+    if (!container)
+      return res
+        .status(404)
+        .json({ success: false, message: "Container not found" });
+
+    const channel = `${projectName}-${containerName}`;
+
+    // Status: Starting
+    await updateStatus(project, containerName, "Starting");
+
+    await dockerService.start(channel, channel);
+    dockerService.watchLogs(channel, channel);
+
+    // Status: Running
+    await updateStatus(project, containerName, "Running");
+
+    res.json({
+      success: true,
+      channel,
+      message: "Container started successfully",
+    });
+  } catch (e) {
+    // On failure → Stopped
+    const project = await Project.findOne({
+      projectName: req.params.projectName,
+    });
+    if (project)
+      await updateStatus(project, req.params.containerName, "Stopped");
+
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while container starting",
+      e,
+    });
+  }
+};
+
+export const stopContainer = async (req: Request, res: Response) => {
+  try {
+    connectDB();
+    const { projectName, containerName } = req.params;
+
+    const project = await Project.findOne({ projectName });
+    if (!project)
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+
+    const container = project.containers.find((c) => c.name === containerName);
+    if (!container)
+      return res
+        .status(404)
+        .json({ success: false, message: "Container not found" });
+
+    const channel = `${projectName}-${containerName}`;
+
+    await dockerService.stop(channel, channel);
+
+    await updateStatus(project, containerName, "Stopped");
+
+    res.json({
+      success: true,
+      channel,
+      message: "Container stopped successfully",
+    });
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while container stopping",
+      e,
+    });
+  }
+};
+
+export const installContainer = async (req: Request, res: Response) => {
+  try {
+    connectDB();
+    const { projectName, containerName } = req.params;
+
+    const project = await Project.findOne({ projectName });
+    if (!project)
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+
+    const container = project.containers.find((c) => c.name === containerName);
+    if (!container)
+      return res
+        .status(404)
+        .json({ success: false, message: "Container not found" });
+
+    const channel = `${projectName}-${containerName}`;
+    const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
+
+    // Status: Deploying
+    await updateStatus(project, containerName, "Deploying");
+
+    await runCmd(`rm -rf ${projectPath}`, channel);
+    await deployService.start(container.gitUrl, projectPath, channel);
+
+    await composeService.create(
+      projectName,
+      containerName,
+      container.image,
+      container.env,
+      container.domains || [],
+      container.ports?.[0]?.iPort,
+      projectPath,
+      channel,
+    );
+
+    dockerService.watchLogs(channel, channel);
+
+    await updateStatus(project, containerName, "Stopped");
+
+    res.json({
+      success: true,
+      channel,
+      message: "Container installation started",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred",
+      error,
+    });
+  }
+};
+
+export const updateContainer = async (req: Request, res: Response) => {
+  try {
+    connectDB();
+    const { projectName, containerName } = req.params;
+    const { name, image, env, domains, ports } = req.body; // new values coming from client
+
+    const project = await Project.findOne({ projectName });
+    if (!project)
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
+
+    const container = project.containers.find((c) => c.name === containerName);
+    if (!container)
+      return res
+        .status(404)
+        .json({ success: false, message: "Container not found" });
+
+    if (name) container.name = name;
+    if (image) container.image = image;
+    if (env) container.env = env;
+    if (domains) container.domains = domains;
+    if (ports) container.ports = ports;
+
+    await project.save();
+
+    const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
+    const channel = `${projectName}-${containerName}`;
+
+    await composeService.rewrite(
+      projectName,
+      containerName,
+      container.image,
+      container.env,
+      container.domains || [],
+      container.ports?.[0]?.iPort,
+      projectPath,
+    );
+
+    dockerService.watchLogs(channel, channel);
+    await updateStatus(project, containerName, "Stopped");
+
+    res.json({
+      success: true,
+      channel,
+      message: "Container updated successfully",
+    });
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating container",
+      error: e,
+    });
+  }
 };

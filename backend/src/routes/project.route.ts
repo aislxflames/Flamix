@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createProject,
+  deleteProject,
   getAllProject,
   getProject,
 } from "../controllers/project.controller.js";
@@ -11,6 +12,8 @@ const router = Router();
 router.post("/project", createProject);
 router.get("/projects", getAllProject);
 router.get("/project/:projectName", getProject);
+router.delete("/project/:projectName", deleteProject);
+
 router.use("/project", containerRoute);
 
 export default router;

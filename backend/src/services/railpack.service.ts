@@ -7,8 +7,8 @@ class RailPack {
       "test",
     );
   }
-  async build(dir: string) {
-    runCmd(`railpack build ${dir}`, "test", {
+  async build(dir: string, channel: string) {
+    runCmd(`railpack build ${dir}`, channel, {
       env: {
         BUILDKIT_HOST: "docker-container://buildkit",
       },
