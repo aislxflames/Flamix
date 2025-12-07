@@ -15,7 +15,7 @@ Content-Type: application/json
 
 ### 
 
-POST http://localhost:5000/api/v1/project/test/container/flamenodes/stop HTTP/1.1
+POST http://localhost:5000/api/v1/project/test/container/flamenodes/start HTTP/1.1
 
 
 ### 

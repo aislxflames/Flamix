@@ -1,132 +1,110 @@
 "use client";
 
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Server, Trash2, ExternalLink, Circle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Server, Trash2 } from "lucide-react";
+import ContainerDelete from "../blocks/ContainerDelete";
+
+interface ContainerCardProps {
+  projectName: string;
+  containerName: string;
+  status: string;
+  href: string;
+}
 
 export default function ContainerCard({
   projectName,
-  name,
-  image,
-  env,
+  containerName,
   status,
-  domains,
-}) {
+  href,
+}: ContainerCardProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const domainList = Array.isArray(domains) ? domains : [];
+  // Format name
+  const displayName = containerName
+    ? containerName.replace(/-/g, " ").toUpperCase()
+    : "UNKNOWN";
 
-  const statusColor = {
-    running: "text-green-400 border-green-500/40",
-    stopped: "text-red-400 border-red-500/40",
-    starting: "text-orange-400 border-orange-500/40",
-    deploying: "text-blue-400 border-blue-500/40",
-  }[status];
+  // Icon color based on status
+  const iconColor: Record<string, string> = {
+    stopped: "text-red-500",
+    running: "text-green-500",
+    starting: "text-orange-500",
+    deploying: "text-blue-500",
+  };
 
-  const deleteContainer = async () => {
-    setLoading(true);
-    await fetch(
-      `http://localhost:5000/api/v1/project/${projectName}/container/${name}/delete`,
-      { method: "DELETE" },
-    );
-    window.location.reload();
+  // Card glow based on status
+  const shadowColor: Record<string, string> = {
+    stopped: "shadow-[0_0_20px_rgba(239,68,68,0.5)]",
+    running: "shadow-[0_0_20px_rgba(34,197,94,0.5)]",
+    starting: "shadow-[0_0_20px_rgba(249,115,22,0.5)]",
+    deploying: "shadow-[0_0_20px_rgba(59,130,246,0.5)]",
+  };
+
+  const shadowHoverColor: Record<string, string> = {
+    stopped: "hover:shadow-[0_0_35px_rgba(239,68,68,0.8)]",
+    running: "hover:shadow-[0_0_35px_rgba(34,197,94,0.8)]",
+    starting: "hover:shadow-[0_0_35px_rgba(249,115,22,0.8)]",
+    deploying: "hover:shadow-[0_0_35px_rgba(59,130,246,0.8)]",
   };
 
   return (
-    <Card
-      className={cn(
-        "rounded-2xl p-5",
-        "bg-black border border-neutral-800",
-        "shadow-[0_0_40px_-18px_rgba(255,255,255,0.1)]",
-        "hover:shadow-[0_0_55px_-10px_rgba(255,255,255,0.2)]",
-        "transition-all",
-      )}
-    >
-      {/* HEADER */}
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-neutral-900 border border-neutral-800">
-            <Server className="w-5 h-5 text-neutral-300" />
-          </div>
+    <div className="relative w-full">
+      <div
+        onClick={() => router.push(href)}
+        className={`
+          w-full rounded-xl border border-white/10 bg-background/60 backdrop-blur-xl shadow-0 
+          p-5 flex flex-col gap-4 cursor-pointer transition-all
+          hover:scale-[1.03] hover:rotate-1
+          ${shadowColor[status]}
+          ${shadowHoverColor[status]}
+        `}
+      >
+        <div className="flex items-center justify-between">
+          {/* ICON + NAME */}
+          <div className="flex items-center gap-4">
+            <Server
+              size={55}
+              className={`${iconColor[status]} drop-shadow-md`}
+            />
 
-          <CardTitle className="text-white text-lg font-semibold">
-            {name}
-          </CardTitle>
-        </div>
+            <div>
+              <h2 className="font-semibold text-xl tracking-wide">
+                {displayName}
+              </h2>
 
-        <Badge
-          className={cn(
-            "px-3 py-1 text-xs font-medium border",
-            "bg-neutral-900",
-            statusColor,
-          )}
-        >
-          <Circle className="w-2 h-2 fill-current mr-1" />
-          {status.toUpperCase()}
-        </Badge>
-      </CardHeader>
-
-      {/* CONTENT */}
-      <CardContent className="text-sm text-neutral-300 space-y-4">
-        {/* IMAGE */}
-        <div className="flex justify-between">
-          <span className="text-neutral-500">Image:</span>
-          <span>{image}</span>
-        </div>
-
-        {/* DOMAINS */}
-        {domainList.length > 0 && (
-          <div className="space-y-1">
-            <span className="text-neutral-500">Domains:</span>
-            {domainList.map((d) => (
-              <p key={d} className="text-neutral-300 text-xs">
-                • {d}
+              <p
+                className={`text-sm capitalize font-semibold ${iconColor[status]}`}
+              >
+                Status: {status}
               </p>
-            ))}
+            </div>
           </div>
-        )}
 
-        {/* ENV */}
-        <div>
-          <span className="text-neutral-500">Environment:</span>
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-xs space-y-2 mt-1">
-            {Object.entries(env).map(([k, v]) => (
-              <div key={k} className="flex justify-between text-neutral-300">
-                <span>{k}</span>
-                <span className="opacity-70">{String(v)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* BUTTONS */}
-        <div className="flex justify-between pt-3">
-          <Button
-            className="bg-neutral-900 border border-neutral-700 text-neutral-200 hover:bg-neutral-800"
-            onClick={() =>
-              router.push(`/dashboard/project/${projectName}/${name}`)
-            }
+          {/* DELETE BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // prevents navigation
+              setOpen(true);
+            }}
+            className="p-2 rounded-full hover:bg-red-500/10 transition-all cursor-pointer"
           >
-            <ExternalLink className="w-4 h-4 mr-1" />
-            Open
-          </Button>
-
-          <Button
-            variant="destructive"
-            disabled={loading}
-            onClick={deleteContainer}
-            className="flex items-center gap-1"
-          >
-            <Trash2 className="w-4 h-4" />
-            {loading ? "Deleting..." : "Delete"}
-          </Button>
+            <Trash2
+              size={26}
+              className="text-muted-foreground hover:text-red-500"
+            />
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* DELETE MODAL */}
+      <ContainerDelete
+        open={open}
+        setOpen={setOpen}
+        projectName={projectName}
+        containerName={containerName}
+      />
+    </div>
   );
 }

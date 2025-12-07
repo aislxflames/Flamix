@@ -21,6 +21,23 @@ export async function createProject(projectName: string) {
   }
 }
 
+export async function deleteProject(projectName: string) {
+  try {
+    const res = await fetch(`${url}/${projectName}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      throw new Error(`Response status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 export async function fetchAllProjects() {
   try {
     const res = await fetch(`http://localhost:5000/api/v1/projects`);

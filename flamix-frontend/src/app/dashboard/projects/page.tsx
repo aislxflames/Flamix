@@ -1,12 +1,10 @@
-"use client";
 import { FlipCardProject } from "@/components/animate-ui/components/community/flip-card";
 import { EmptyProject } from "@/components/blocks/EmptyProject";
 import ProjectCard from "@/components/cards/ProjectCard";
-import { createProject, fetchAllProjects } from "@/utils/project";
+import { fetchAllProjects } from "@/utils/project";
 
 export default async function Dashboard() {
   const projects = await fetchAllProjects();
-  console.log(projects);
 
   return (
     <div className="flex justify-center items-center h-fit flex-col">
@@ -21,7 +19,6 @@ export default async function Dashboard() {
               <ProjectCard
                 key={p.projectName}
                 projectName={p.projectName}
-                status="Running"
                 href={`/dashboard/project/${p.projectName}`}
               />
             </div>
