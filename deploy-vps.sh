@@ -49,16 +49,16 @@ npm install -g pm2
 
 # Create project directory
 echo "📁 Setting up project directory..."
-sudo mkdir -p /var/www/$PROJECT_NAME
-sudo chown -R $USER:$USER /var/www/$PROJECT_NAME
-cd /var/www/$PROJECT_NAME
+sudo mkdir -p /opt/$PROJECT_NAME
+sudo chown -R $USER:$USER /opt/$PROJECT_NAME
+cd /opt/$PROJECT_NAME
 
 # Clone or copy project (assuming project files are already on server)
 if [ -d "/tmp/flamix-source" ]; then
     echo "📋 Copying project files..."
     cp -r /tmp/flamix-source/* .
 else
-    echo "⚠️  Please upload your project files to /var/www/$PROJECT_NAME"
+    echo "⚠️  Please upload your project files to /opt/$PROJECT_NAME"
     echo "   You can use: scp -r ./Flamix user@your-server:/tmp/flamix-source"
     exit 1
 fi
@@ -202,7 +202,7 @@ echo "📝 Creating update script..."
 cat > update.sh << 'EOF'
 #!/bin/bash
 echo "🔄 Updating Flamix..."
-cd /var/www/flamix
+cd /opt/flamix
 
 # Pull latest changes (if using git)
 # git pull origin main
@@ -243,7 +243,7 @@ mkdir -p $BACKUP_DIR
 mongodump --db flamix_db --out $BACKUP_DIR/mongo_$DATE
 
 # Backup application files
-tar -czf $BACKUP_DIR/app_$DATE.tar.gz /var/www/flamix --exclude=node_modules --exclude=.next
+tar -czf $BACKUP_DIR/app_$DATE.tar.gz /opt/flamix --exclude=node_modules --exclude=.next
 
 # Keep only last 7 backups
 find $BACKUP_DIR -name "mongo_*" -mtime +7 -delete
@@ -256,7 +256,7 @@ chmod +x backup.sh
 
 # Setup daily backup cron
 echo "⏰ Setting up daily backups..."
-(crontab -l 2>/dev/null; echo "0 2 * * * /var/www/$PROJECT_NAME/backup.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * /opt/$PROJECT_NAME/backup.sh") | crontab -
 
 echo "✅ Deployment completed successfully!"
 echo ""

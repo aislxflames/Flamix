@@ -78,9 +78,9 @@ sudo systemctl enable nginx
 
 ```bash
 # Create project directory
-sudo mkdir -p /var/www/flamix
-sudo chown -R $USER:$USER /var/www/flamix
-cd /var/www/flamix
+sudo mkdir -p /opt/flamix
+sudo chown -R $USER:$USER /opt/flamix
+cd /opt/flamix
 
 # Copy your project files here
 # Install dependencies
@@ -283,7 +283,7 @@ sudo tail -f /var/log/nginx/error.log
 
 2. **Permission denied**
    ```bash
-   sudo chown -R $USER:$USER /var/www/flamix
+   sudo chown -R $USER:$USER /opt/flamix
    ```
 
 3. **MongoDB connection failed**
