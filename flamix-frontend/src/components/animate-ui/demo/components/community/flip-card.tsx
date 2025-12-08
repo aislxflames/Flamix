@@ -1,21 +1,15 @@
 'use client';
 
-import { FlipCard } from '@/components/animate-ui/components/community/flip-card';
+import { FlipCardProject } from '@/components/animate-ui/components/community/flip-card';
 
 const data = {
-  name: 'Animate UI',
-  username: 'animate_ui',
-  image:
-    'https://pbs.twimg.com/profile_images/1950218390741618688/72447Y7e_400x400.jpg',
-  bio: 'A fully animated, open-source component distribution built with React, TypeScript, Tailwind CSS, and Motion.',
-  stats: { following: 200, followers: 2900, posts: 120 },
-  socialLinks: {
-    linkedin: 'https://linkedin.com',
-    github: 'https://github.com',
-    twitter: 'https://twitter.com',
-  },
+  _id: 'demo-id',
+  projectName: 'Animate UI',
+  containers: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 export const FlipCardDemo = () => {
-  return <FlipCard data={data} />;
+  return <FlipCardProject data={data} onOpen={() => {}} onDelete={() => {}} />;
 };

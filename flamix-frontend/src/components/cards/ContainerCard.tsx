@@ -10,6 +10,9 @@ interface ContainerCardProps {
   containerName: string;
   status: string;
   href: string;
+  image?: string;
+  env?: Record<string, any>;
+  domains?: string[];
 }
 
 export default function ContainerCard({
@@ -17,6 +20,9 @@ export default function ContainerCard({
   containerName,
   status,
   href,
+  image,
+  env,
+  domains,
 }: ContainerCardProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);

@@ -9,12 +9,12 @@ export default async function Dashboard() {
   return (
     <div className="flex justify-center items-center h-fit flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2"></div>
-      {projects.length == 0 ? <EmptyProject /> : null}
+      {(projects?.length || 0) == 0 ? <EmptyProject /> : null}
 
       {/* Conditional Rendering */}
       {projects && projects.length > 0 ? (
         <div className="grid grid-cols-3 w-full mt-4  gap-10 px-20">
-          {projects.map((p) => (
+          {projects.map((p: any) => (
             <div key={p._id} className=" duration-75">
               <ProjectCard
                 key={p.projectName}

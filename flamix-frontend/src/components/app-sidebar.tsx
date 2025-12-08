@@ -10,8 +10,7 @@ import {
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
-import { IconDashboard } from "@tabler/icons-react";
-import { ProjectorIcon } from "lucide-react";
+import { IconDashboard, IconDeviceDesktop } from "@tabler/icons-react";
 
 const navMainItems = [
   {
@@ -22,11 +21,11 @@ const navMainItems = [
   {
     title: "Projects",
     url: "/dashboard/projects",
-    icon: ProjectorIcon,
+    icon: IconDeviceDesktop,
   },
 ];
 
-export function AppSidebar(props) {
+export function AppSidebar(props: any) {
   const pathname = usePathname();
 
   return (
@@ -38,7 +37,7 @@ export function AppSidebar(props) {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={navMainItems} pathname={pathname} />{" "}
+        <NavMain items={navMainItems} />{" "}
         <NavSecondary items={[]} className="mt-auto" />
       </SidebarContent>
 

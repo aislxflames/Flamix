@@ -11,7 +11,7 @@ import { Play, Square, Rocket, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function ContainerActions({ project, container }) {
+export default function ContainerActions({ project, container }: { project: any, container: any }) {
   const [loading, setLoading] = useState("");
   const router = useRouter();
 
