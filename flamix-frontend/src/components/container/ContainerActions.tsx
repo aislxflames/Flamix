@@ -17,9 +17,10 @@ export default function ContainerActions({ project, container }) {
 
   const run = async (label: string, fn: () => Promise<any>) => {
     setLoading(label);
+    router.refresh();
     await fn();
     setLoading("");
-    router.refresh(); // ✅ FORCE SERVER COMPONENT TO REFRESH
+    router.refresh();
   };
 
   const animated =

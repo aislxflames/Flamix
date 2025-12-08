@@ -1,16 +1,13 @@
 import ContainerCard from "@/components/cards/ContainerCard";
 import CreateContainerDialog from "@/components/container/CreateContainerDialog";
+import { getProject } from "@/utils/project";
 
 export default async function ProjectPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await props.params;
 
-  const res = await fetch(`http://localhost:5000/api/v1/project/${slug}`, {
-    cache: "no-store",
-  });
-
-  const project = await res.json();
+  const project = await getProject(slug);
   const hrefUrl = `/dashboard/project/${project.projectName}/`;
   const projectName = String(slug);
 

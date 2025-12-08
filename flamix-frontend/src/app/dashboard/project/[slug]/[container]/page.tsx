@@ -5,7 +5,6 @@ import EditorClientWrapper from "@/components/editor/EditorClientWrapper";
 import ContainerActions from "@/components/container/ContainerActions";
 import EnvBlock from "@/components/blocks/EnvBlock";
 import LogViewer from "@/components/blocks/LogViewer";
-import DomainAdd from "@/components/blocks/DomainAdd";
 import { getContainer as fetchContainerData } from "@/utils/container";
 import DomainAddDialog from "@/components/dialog/DomainAddDialog";
 import GeneralSettings from "@/components/blocks/GeneralSettings";

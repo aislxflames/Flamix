@@ -12,50 +12,82 @@ class ComposeService {
   /**
    * Build Traefik rules for new domain objects
    */
-  buildTraefikLabels(name: string, domains: any[]) {
-    if (!domains || domains.length === 0) {
-      return `
+buildTraefikLabels(name: string, containerName: string, domains: any[]) {
+  if (!domains || domains.length === 0) {
+    return `
       - "traefik.http.routers.${name}.rule=Host(\`localhost\`)"
+      - "traefik.http.routers.${name}.entrypoints=web"
       - "traefik.http.services.${name}.loadbalancer.server.port=3000"
-      `;
+    `;
+  }
+
+  const labels: string[] = [];
+
+  domains.forEach((d, index) => {
+    const routerBase = `${name}-${containerName}-${index}`;
+
+    const domain =
+      d.domain ??
+      d.host ??
+      d.name ??
+      d.url ??
+      d.value ??
+      null;
+
+    const port = d.port ?? d.iPort ?? 3000;
+    const ssl = d.ssl ?? false;
+
+    if (!domain) {
+      console.log("⚠️ Missing domain in entry:", d);
+      return;
     }
 
-    const labels: string[] = [];
+    //
+    // HTTP Router
+    //
+    labels.push(
+      `- "traefik.http.routers.${routerBase}-http.rule=Host(\`${domain}\`)"`,
+    );
+    labels.push(
+      `- "traefik.http.routers.${routerBase}-http.entrypoints=web"`,
+    );
+    labels.push(
+      `- "traefik.http.routers.${routerBase}-http.service=${routerBase}-service"`
+    );
 
-    domains.forEach((d, index) => {
-      const routerBase = `${name}-${index}`;
-      const domain = d.domain;
-      const port = d.port || 3000;
-
-      // HTTP router
+    //
+    // HTTPS Router
+    //
+    if (ssl) {
       labels.push(
-        `- "traefik.http.routers.${routerBase}-http.rule=Host(\`${domain}\`)"`,
+        `- "traefik.http.routers.${routerBase}-https.rule=Host(\`${domain}\`)"`,
       );
       labels.push(
-        `- "traefik.http.routers.${routerBase}-http.entrypoints=web"`,
+        `- "traefik.http.routers.${routerBase}-https.entrypoints=websecure"`,
       );
-
-      // HTTPS router only if SSL enabled
-      if (d.ssl) {
-        labels.push(
-          `- "traefik.http.routers.${routerBase}-https.rule=Host(\`${domain}\`)"`,
-        );
-        labels.push(
-          `- "traefik.http.routers.${routerBase}-https.entrypoints=websecure"`,
-        );
-        labels.push(
-          `- "traefik.http.routers.${routerBase}-https.tls.certresolver=myresolver"`,
-        );
-      }
-
-      // Service mapping
       labels.push(
-        `- "traefik.http.services.${routerBase}.loadbalancer.server.port=${port}"`,
+        `- "traefik.http.routers.${routerBase}-https.tls=true"`
       );
-    });
+      labels.push(
+        `- "traefik.http.routers.${routerBase}-https.tls.certresolver=myresolver"`
+      );
+      labels.push(
+        `- "traefik.http.routers.${routerBase}-https.service=${routerBase}-service"`
+      );
+    }
 
-    return labels.join("\n      ");
-  }
+    //
+    // Shared Service
+    //
+    labels.push(
+      `- "traefik.http.services.${routerBase}-service.loadbalancer.server.port=${port}"`,
+    );
+  });
+
+  return labels.join("\n      ");
+}
+
+
 
   /**
    * Create docker-compose.yml
@@ -73,7 +105,7 @@ class ComposeService {
     await fs.mkdir(projectPath, { recursive: true });
 
     const envFile = convertEnvToEnvFile(env);
-    const traefikLabels = this.buildTraefikLabels(name, domains);
+    const traefikLabels = this.buildTraefikLabels(name, containerName, domains);
 
     const composeYml = `
 version: "3.9"
@@ -101,7 +133,7 @@ networks:
     );
     await fs.writeFile(pathModule.join(projectPath, "container.env"), envFile);
 
-    await runCmd(`cd ${projectPath} && docker compose up -d`, channel);
+    await runCmd(`cd ${projectPath} && docker compose up`, channel);
   }
 
   /**
@@ -117,7 +149,7 @@ networks:
     projectPath: string,
   ) {
     const envFile = convertEnvToEnvFile(env);
-    const traefikLabels = this.buildTraefikLabels(name, domains);
+    const traefikLabels = this.buildTraefikLabels(name, containerName, domains);
 
     const composeYml = `
 version: "3.9"

@@ -10,32 +10,32 @@ class ProxyService {
     const proxyPath = `/opt/flamix/proxy`;
     fs.mkdirSync(proxyPath, { recursive: true });
 
-    const composeYml = `
+const composeYml = `
 version: "3.9"
 
 services:
   traefik:
     image: traefik:v2.11
-    container_name: ${proxyName} 
+    container_name: ${proxyName}
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
 
-      # EntryPoints (HTTP + HTTPS)
+      # HTTP & HTTPS EntryPoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
 
-      # Redirect HTTP → HTTPS
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # REMOVE REDIRECT so HTTP works normally
+      # (Do NOT include:
+      #   --entrypoints.web.http.redirections.entrypoint.to=websecure
+      # )
 
-      # Let's Encrypt Auto SSL
+      # Let's Encrypt SSL on HTTPS
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.myresolver.acme.email=your@email.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
 
-      # Optional dashboard
       - "--api.dashboard=true"
 
     ports:
@@ -53,6 +53,7 @@ networks:
   flamix-proxy:
     external: true
 `;
+
 
     fs.writeFileSync(
       pathModule.join(proxyPath, "docker-compose.yml"),

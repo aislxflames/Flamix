@@ -1,7 +1,6 @@
 import express, { type Express } from "express";
 import dotenv from "dotenv";
 import routeController from "./routes/route.controller.js";
-import run from "./utils/run.js";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import { logStore } from "./services/command.service.js";
@@ -39,8 +38,8 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`Application is running on http://localhost:${port}`);
+server.listen(port, "0.0.0.0", () => {
+  console.log(`Application is running on http://0.0.0.0:${port}`);
 });
 
 export { io, app };

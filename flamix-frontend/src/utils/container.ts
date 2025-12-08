@@ -1,4 +1,4 @@
-const url = `http://localhost:5000/api/v1/project`;
+const url = `${process.env.NEXT_PUBLIC_BACKEND_API}project`;
 
 export interface DomainConfig {
   domain: string;

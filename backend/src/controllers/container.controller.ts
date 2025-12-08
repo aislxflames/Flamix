@@ -258,7 +258,8 @@ export const installContainer = async (req: Request, res: Response) => {
     await runCmd(`rm -rf ${projectPath}`, channel);
     await deployService.start(container.gitUrl, projectPath, channel);
 
-    const domainList = container.domains?.map((d: any) => d.domain) || [];
+    const domainList = container.domains || [];
+
 
     await composeService.create(
       projectName,
@@ -316,7 +317,7 @@ export const updateContainer = async (req: Request, res: Response) => {
     const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
     const channel = `${projectName}-${containerName}`;
 
-    const domainList = container.domains?.map((d: any) => d.domain) || [];
+    const domainList = container.domains || [];
 
     await composeService.rewrite(
       projectName,

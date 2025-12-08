@@ -4,6 +4,7 @@ import { proxyService } from "../services/proxy.service.js";
 export const installProxy = async (req: Request, res: Response) => {
   try {
     await proxyService.install("proxy");
+    res.json({message: "Proxy Installation Started"})
     proxyService.log("proxy");
 
     return res.status(200).json({

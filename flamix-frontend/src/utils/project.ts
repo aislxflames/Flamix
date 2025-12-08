@@ -1,4 +1,4 @@
-const url = `http://localhost:5000/api/v1/project`;
+const url = `${process.env.NEXT_PUBLIC_BACKEND_API}project`;
 
 export async function createProject(projectName: string) {
   try {
@@ -40,7 +40,18 @@ export async function deleteProject(projectName: string) {
 
 export async function fetchAllProjects() {
   try {
-    const res = await fetch(`http://localhost:5000/api/v1/projects`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}projects`);
+
+    const data = await res.json();
+    return data;
+  } catch (e) { }
+}
+
+export async function getProject(projectName: string) {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}project/${projectName}`,
+    );
 
     const data = await res.json();
     return data;
