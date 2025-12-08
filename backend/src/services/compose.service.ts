@@ -9,28 +9,71 @@ class ComposeService {
     runCmd(`cd ${projectPath} && docker compose up -d`, "test");
   }
 
-  buildDomainsRule(domains: string[]) {
-    if (!domains || domains.length === 0) return "`localhost`";
-    return domains.map((d) => `\`${d}\``).join(", ");
+  /**
+   * Build Traefik rules for new domain objects
+   */
+  buildTraefikLabels(name: string, domains: any[]) {
+    if (!domains || domains.length === 0) {
+      return `
+      - "traefik.http.routers.${name}.rule=Host(\`localhost\`)"
+      - "traefik.http.services.${name}.loadbalancer.server.port=3000"
+      `;
+    }
+
+    const labels: string[] = [];
+
+    domains.forEach((d, index) => {
+      const routerBase = `${name}-${index}`;
+      const domain = d.domain;
+      const port = d.port || 3000;
+
+      // HTTP router
+      labels.push(
+        `- "traefik.http.routers.${routerBase}-http.rule=Host(\`${domain}\`)"`,
+      );
+      labels.push(
+        `- "traefik.http.routers.${routerBase}-http.entrypoints=web"`,
+      );
+
+      // HTTPS router only if SSL enabled
+      if (d.ssl) {
+        labels.push(
+          `- "traefik.http.routers.${routerBase}-https.rule=Host(\`${domain}\`)"`,
+        );
+        labels.push(
+          `- "traefik.http.routers.${routerBase}-https.entrypoints=websecure"`,
+        );
+        labels.push(
+          `- "traefik.http.routers.${routerBase}-https.tls.certresolver=myresolver"`,
+        );
+      }
+
+      // Service mapping
+      labels.push(
+        `- "traefik.http.services.${routerBase}.loadbalancer.server.port=${port}"`,
+      );
+    });
+
+    return labels.join("\n      ");
   }
 
   /**
-   * Creates project folder + docker-compose.yml + env file
+   * Create docker-compose.yml
    */
   async create(
     name: string,
     containerName: string,
     image: string,
     env: any,
-    domains: string[],
+    domains: any[],
     internalPort: number,
     projectPath: string,
     channel: string,
   ) {
     await fs.mkdir(projectPath, { recursive: true });
 
-    const domainRule = this.buildDomainsRule(domains);
     const envFile = convertEnvToEnvFile(env);
+    const traefikLabels = this.buildTraefikLabels(name, domains);
 
     const composeYml = `
 version: "3.9"
@@ -40,16 +83,11 @@ services:
     env_file:
       - ./container.env
     container_name: ${name}-${containerName}
-    ports:
-      - "${internalPort}"
     networks:
       - flamix-proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${name}.rule=Host(${domainRule})"
-      - "traefik.http.routers.${name}.entrypoints=websecure"
-      - "traefik.http.routers.${name}.tls.certresolver=myresolver"
-      - "traefik.http.services.${name}.loadbalancer.server.port=${internalPort}"
+      ${traefikLabels}
     restart: always
 
 networks:
@@ -61,26 +99,25 @@ networks:
       pathModule.join(projectPath, "docker-compose.yml"),
       composeYml,
     );
-
     await fs.writeFile(pathModule.join(projectPath, "container.env"), envFile);
 
     await runCmd(`cd ${projectPath} && docker compose up -d`, channel);
   }
 
   /**
-   * Rewrites compose + env file on update
+   * Rewrite compose.yml on update
    */
   async rewrite(
     name: string,
     containerName: string,
     image: string,
     env: any,
-    domains: string[],
+    domains: any[],
     internalPort: number,
     projectPath: string,
   ) {
-    const domainRule = this.buildDomainsRule(domains);
     const envFile = convertEnvToEnvFile(env);
+    const traefikLabels = this.buildTraefikLabels(name, domains);
 
     const composeYml = `
 version: "3.9"
@@ -90,16 +127,11 @@ services:
     env_file:
       - ./container.env
     container_name: ${name}-${containerName}
-    ports:
-      - "${internalPort}"
     networks:
       - flamix-proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${name}.rule=Host(${domainRule})"
-      - "traefik.http.routers.${name}.entrypoints=websecure"
-      - "traefik.http.routers.${name}.tls.certresolver=myresolver"
-      - "traefik.http.services.${name}.loadbalancer.server.port=${internalPort}"
+      ${traefikLabels}
     restart: always
 
 networks:

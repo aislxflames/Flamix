@@ -12,12 +12,13 @@ export default async function ProjectPage(props: {
 
   const project = await res.json();
   const hrefUrl = `/dashboard/project/${project.projectName}/`;
+  const projectName = String(slug);
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between">
         <h1 className="text-3xl font-bold">Project: {slug}</h1>
-        <CreateContainerDialog name={slug} />
+        <CreateContainerDialog projectName={projectName} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -6,6 +6,7 @@ import { runCmd } from "../services/command.service.js";
 import { deployService } from "../services/deploy.service.js";
 import { dockerService } from "../services/docker.service.js";
 
+// Update container status
 const updateStatus = async (
   project: any,
   containerName: string,
@@ -19,6 +20,15 @@ const updateStatus = async (
   await project.save();
 };
 
+// Normalize domain objects
+const normalizeDomains = (domains: any[] = []) =>
+  domains.map((d) => ({
+    domain: d.domain,
+    displayName: d.displayName || d.domain,
+    port: Number(d.port) || 80,
+    ssl: Boolean(d.ssl),
+  }));
+
 export const createContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
@@ -26,11 +36,10 @@ export const createContainer = async (req: Request, res: Response) => {
     let { name, image, env, ports, gitUrl, domains } = req.body;
 
     const project = await Project.findOne({ projectName });
-    if (!project) {
+    if (!project)
       return res
         .status(404)
         .json({ success: false, message: "Project not found" });
-    }
 
     if (!image || image.trim() === "") {
       image = `${projectName}-${name}`;
@@ -42,8 +51,8 @@ export const createContainer = async (req: Request, res: Response) => {
       env,
       ports,
       gitUrl,
-      domains,
-      status: "Stopped", // default
+      domains: normalizeDomains(domains),
+      status: "Stopped",
     });
 
     await project.save();
@@ -69,26 +78,22 @@ export const deleteContainer = async (req: Request, res: Response) => {
         .json({ success: false, message: "Project not found" });
 
     const index = project.containers.findIndex((c) => c.name === containerName);
-    if (index === -1) {
+    if (index === -1)
       return res
         .status(404)
         .json({ success: false, message: "Container not found" });
-    }
 
     project.containers.splice(index, 1);
     await project.save();
 
     const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
-
     const channel = `${projectName}-${containerName}`;
+
     await dockerService.stop(channel, channel);
     await dockerService.delete(`${projectName}-${containerName}`, channel);
     await runCmd(`rm -rf ${projectPath}`, channel);
 
-    res.json({
-      success: true,
-      message: "Container deleted successfully",
-    });
+    res.json({ success: true, message: "Container deleted successfully" });
   } catch (error) {
     res
       .status(500)
@@ -100,13 +105,13 @@ export const getAllContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName } = req.params;
+
     const project = await Project.findOne({ projectName });
 
-    if (!project) {
+    if (!project)
       return res
         .status(404)
         .json({ success: false, message: "Project not found" });
-    }
 
     res.json({
       success: true,
@@ -125,24 +130,19 @@ export const getContainer = async (req: Request, res: Response) => {
     const { projectName, containerName } = req.params;
 
     const project = await Project.findOne({ projectName });
-    if (!project) {
+    if (!project)
       return res
         .status(404)
         .json({ success: false, message: "Project not found" });
-    }
 
     const container = project.containers.find((c) => c.name === containerName);
 
-    if (!container) {
+    if (!container)
       return res
         .status(404)
         .json({ success: false, message: "Container not found" });
-    }
 
-    res.json({
-      success: true,
-      container,
-    });
+    res.json({ success: true, container });
   } catch (error) {
     res
       .status(500)
@@ -169,13 +169,11 @@ export const startContainer = async (req: Request, res: Response) => {
 
     const channel = `${projectName}-${containerName}`;
 
-    // Status: Starting
     await updateStatus(project, containerName, "Starting");
 
     await dockerService.start(channel, channel);
     dockerService.watchLogs(channel, channel);
 
-    // Status: Running
     await updateStatus(project, containerName, "Running");
 
     res.json({
@@ -184,7 +182,6 @@ export const startContainer = async (req: Request, res: Response) => {
       message: "Container started successfully",
     });
   } catch (e) {
-    // On failure → Stopped
     const project = await Project.findOne({
       projectName: req.params.projectName,
     });
@@ -256,18 +253,19 @@ export const installContainer = async (req: Request, res: Response) => {
     const channel = `${projectName}-${containerName}`;
     const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
 
-    // Status: Deploying
     await updateStatus(project, containerName, "Deploying");
 
     await runCmd(`rm -rf ${projectPath}`, channel);
     await deployService.start(container.gitUrl, projectPath, channel);
+
+    const domainList = container.domains?.map((d: any) => d.domain) || [];
 
     await composeService.create(
       projectName,
       containerName,
       container.image,
       container.env,
-      container.domains || [],
+      domainList,
       container.ports?.[0]?.iPort,
       projectPath,
       channel,
@@ -283,11 +281,9 @@ export const installContainer = async (req: Request, res: Response) => {
       message: "Container installation started",
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "An error occurred",
-      error,
-    });
+    res
+      .status(500)
+      .json({ success: false, message: "An error occurred", error });
   }
 };
 
@@ -295,7 +291,7 @@ export const updateContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
-    const { name, image, env, domains, ports } = req.body; // new values coming from client
+    const { name, image, env, domains, ports } = req.body;
 
     const project = await Project.findOne({ projectName });
     if (!project)
@@ -312,20 +308,22 @@ export const updateContainer = async (req: Request, res: Response) => {
     if (name) container.name = name;
     if (image) container.image = image;
     if (env) container.env = env;
-    if (domains) container.domains = domains;
     if (ports) container.ports = ports;
+    if (domains) container.domains = normalizeDomains(domains);
 
     await project.save();
 
     const projectPath = `/opt/flamix/projects/${projectName}-${containerName}`;
     const channel = `${projectName}-${containerName}`;
 
+    const domainList = container.domains?.map((d: any) => d.domain) || [];
+
     await composeService.rewrite(
       projectName,
       containerName,
       container.image,
       container.env,
-      container.domains || [],
+      domainList,
       container.ports?.[0]?.iPort,
       projectPath,
     );
@@ -339,10 +337,8 @@ export const updateContainer = async (req: Request, res: Response) => {
       message: "Container updated successfully",
     });
   } catch (e) {
-    res.status(500).json({
-      success: false,
-      message: "Error updating container",
-      error: e,
-    });
+    res
+      .status(500)
+      .json({ success: false, message: "Error updating container", error: e });
   }
 };

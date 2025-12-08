@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { createProject } from "@/utils/project";
+import { useRouter } from "next/navigation";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -26,11 +27,14 @@ export default function CreateProject({
 }: CreateProjectDialogProps) {
   const [projectName, setProjectName] = useState("");
 
+  const router = useRouter();
+
   const handelSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const name = projectName.toLowerCase().replace(/\s+/g, "-");
     createProject(name);
     setOpen(false);
+    router.refresh();
   };
 
   return (

@@ -23,10 +23,9 @@ export default function RootLayout({
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
+        <AppSidebar />
         <SidebarInset>
-          <SiteHeader title="Projects" />
-
+          <SiteHeader title="Dashboard" />
           {children}
         </SidebarInset>
       </SidebarProvider>

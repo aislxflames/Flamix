@@ -71,7 +71,7 @@ Content-Type: application/json
 
 ### 
 
-PUT http://localhost:5000/api/v1/project/test/container/flamenodes/update
+PUT http://localhost:5000/api/v1/project/test/container/frontend-flamenodes/update
 Content-Type: application/json
 
 {
