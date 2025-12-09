@@ -14,21 +14,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar />
-        <SidebarInset>
-          <SiteHeader title="Dashboard" />
-          {children}
-        </SidebarInset>
-      </SidebarProvider>
-    </>
+<>
+  <SidebarProvider
+    className="h-screen flex overflow-hidden"
+    style={
+      {
+        "--sidebar-width": "calc(var(--spacing) * 72)",
+        "--header-height": "calc(var(--spacing) * 12)",
+      } as React.CSSProperties
+    }
+  >
+    <AppSidebar />
+
+    <SidebarInset className="flex-1 overflow-y-auto">
+      <SiteHeader title="Dashboard" />
+      {children}
+    </SidebarInset>
+  </SidebarProvider>
+</>
+
   );
 }

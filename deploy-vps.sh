@@ -1,22 +1,20 @@
 #!/bin/bash
 
-# Flamix VPS Deployment Script
-# This script sets up and deploys the Flamix project on a VPS
-
-set -e  # Exit on any error
+# Flamix VPS Deployment Script (No Nginx Version)
+set -e
 
 # Configuration
 PROJECT_NAME="flamix"
-DOMAIN="${DOMAIN:-your-domain.com}"  # Set via environment variable
+DOMAIN="${DOMAIN:-your-domain.com}"  
 DB_NAME="${DB_NAME:-flamix_db}"
 DB_USER="${DB_USER:-flamix_user}"
 DB_PASS="${DB_PASS:-$(openssl rand -base64 32)}"
 MONGO_URI="${MONGO_URI:-mongodb://localhost:27017/$DB_NAME}"
 
-echo "🚀 Starting Flamix VPS Deployment..."
+echo "🚀 Starting Flamix VPS Deployment (NO NGINX)..."
 
 # Update system
-echo "📦 Updating system packages..."
+echo "📦 Updating system..."
 sudo apt update && sudo apt upgrade -y
 
 # Install Node.js 20
@@ -37,12 +35,6 @@ sudo apt-get install -y mongodb-org
 sudo systemctl start mongod
 sudo systemctl enable mongod
 
-# Install Nginx
-echo "📦 Installing Nginx..."
-sudo apt install -y nginx
-sudo systemctl start nginx
-sudo systemctl enable nginx
-
 # Install PM2
 echo "📦 Installing PM2..."
 npm install -g pm2
@@ -53,53 +45,52 @@ sudo mkdir -p /opt/$PROJECT_NAME
 sudo chown -R $USER:$USER /opt/$PROJECT_NAME
 cd /opt/$PROJECT_NAME
 
-# Clone or copy project (assuming project files are already on server)
+# Clone / copy project
 if [ -d "/tmp/flamix-source" ]; then
     echo "📋 Copying project files..."
     cp -r /tmp/flamix-source/* .
 else
-    echo "⚠️  Please upload your project files to /opt/$PROJECT_NAME"
-    echo "   You can use: scp -r ./Flamix user@your-server:/tmp/flamix-source"
+    echo "⚠️ Upload your project to /tmp/flamix-source"
     exit 1
 fi
 
-# Install dependencies
-echo "📦 Installing project dependencies..."
+# Install dependencies (ROOT)
+echo "📦 Installing root dependencies..."
 pnpm install
 
 # Build frontend
-echo "🏗️  Building frontend..."
+echo "🏗️ Building frontend..."
 cd flamix-frontend
 pnpm install
 pnpm build
 cd ..
 
 # Build backend
-echo "🏗️  Building backend..."
+echo "🏗️ Building backend..."
 cd backend
 pnpm install
 pnpm run build
 cd ..
 
-# Create environment files
-echo "⚙️  Creating environment files..."
+# Create .env files
+echo "⚙️ Creating environment files..."
 
 # Backend .env
 cat > backend/.env << EOF
 NODE_ENV=production
-PORT=3001
+PORT=5000
 MONGODB_URI=$MONGO_URI
-CORS_ORIGIN=https://$DOMAIN
+CORS_ORIGIN=http://$DOMAIN:3000
 EOF
 
 # Frontend .env
 cat > flamix-frontend/.env.local << EOF
-NEXT_PUBLIC_API_URL=https://$DOMAIN/api
+NEXT_PUBLIC_API_URL=http://$DOMAIN:5000/api
 NODE_ENV=production
 EOF
 
-# Create PM2 ecosystem file
-echo "⚙️  Creating PM2 configuration..."
+# PM2 config
+echo "⚙️ Creating PM2 ecosystem file..."
 cat > ecosystem.config.js << EOF
 module.exports = {
   apps: [
@@ -120,94 +111,57 @@ module.exports = {
       args: 'start',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001
+        PORT: 5000
       }
     }
   ]
 };
 EOF
 
-# Configure Nginx
-echo "🌐 Configuring Nginx..."
-sudo tee /etc/nginx/sites-available/$PROJECT_NAME << EOF
-server {
-    listen 80;
-    server_name $DOMAIN www.$DOMAIN;
-
-    # Frontend
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-    }
-
-    # Backend API
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-    }
-
-    # WebSocket support
-    location /socket.io/ {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
-EOF
-
-# Enable site
-sudo ln -sf /etc/nginx/sites-available/$PROJECT_NAME /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
-
-# Setup SSL with Let's Encrypt
-echo "🔒 Setting up SSL certificate..."
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN
-
-# Start applications with PM2
-echo "🚀 Starting applications..."
+# Start PM2 apps
+echo "🚀 Starting PM2 apps..."
 pm2 start ecosystem.config.js
 pm2 save
 pm2 startup
 
-# Setup firewall
+# Firewall
 echo "🔥 Configuring firewall..."
 sudo ufw allow ssh
-sudo ufw allow 'Nginx Full'
+sudo ufw allow 3000/tcp
+sudo ufw allow 5000/tcp
 sudo ufw --force enable
 
-# Create update script
+# Backup script
+echo "📝 Creating backup script..."
+cat > backup.sh << 'EOF'
+#!/bin/bash
+BACKUP_DIR="/var/backups/flamix"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p $BACKUP_DIR
+
+# Backup MongoDB
+mongodump --db flamix_db --out $BACKUP_DIR/mongo_$DATE
+
+# Backup application
+tar -czf $BACKUP_DIR/app_$DATE.tar.gz /opt/flamix --exclude=node_modules --exclude=.next
+
+# Remove old (7 days)
+find $BACKUP_DIR -name "mongo_*" -mtime +7 -delete
+find $BACKUP_DIR -name "app_*" -mtime +7 -delete
+
+echo "✅ Backup done: $BACKUP_DIR"
+EOF
+
+chmod +x backup.sh
+
+# Update script
 echo "📝 Creating update script..."
 cat > update.sh << 'EOF'
 #!/bin/bash
 echo "🔄 Updating Flamix..."
 cd /opt/flamix
 
-# Pull latest changes (if using git)
-# git pull origin main
-
-# Update dependencies
 pnpm install
 
 # Build frontend
@@ -222,57 +176,20 @@ pnpm install
 pnpm run build
 cd ..
 
-# Restart applications
 pm2 restart all
 
-echo "✅ Update complete!"
+echo "Deployment Update complete!"
 EOF
 
 chmod +x update.sh
 
-# Create backup script
-echo "📝 Creating backup script..."
-cat > backup.sh << 'EOF'
-#!/bin/bash
-BACKUP_DIR="/var/backups/flamix"
-DATE=$(date +%Y%m%d_%H%M%S)
+# Cron (backup)
+echo "⏰ Setting backup cron..."
+(crontab -l 2>/dev/null; echo "0 2 * * * /opt/flamix/backup.sh") | crontab -
 
-mkdir -p $BACKUP_DIR
-
-# Backup MongoDB
-mongodump --db flamix_db --out $BACKUP_DIR/mongo_$DATE
-
-# Backup application files
-tar -czf $BACKUP_DIR/app_$DATE.tar.gz /opt/flamix --exclude=node_modules --exclude=.next
-
-# Keep only last 7 backups
-find $BACKUP_DIR -name "mongo_*" -mtime +7 -delete
-find $BACKUP_DIR -name "app_*" -mtime +7 -delete
-
-echo "✅ Backup completed: $BACKUP_DIR"
-EOF
-
-chmod +x backup.sh
-
-# Setup daily backup cron
-echo "⏰ Setting up daily backups..."
-(crontab -l 2>/dev/null; echo "0 2 * * * /opt/$PROJECT_NAME/backup.sh") | crontab -
-
-echo "✅ Deployment completed successfully!"
 echo ""
-echo "🌐 Your application is now running at: https://$DOMAIN"
-echo "📊 Monitor with: pm2 monit"
-echo "📝 Logs: pm2 logs"
-echo "🔄 Update: ./update.sh"
-echo "💾 Backup: ./backup.sh"
+echo "🎉 Deployment complete (NO NGINX!)"
+echo "Frontend running at: http://your-server-ip:3000"
+echo "Backend running at:  http://your-server-ip:5000"
 echo ""
-echo "📋 Database Details:"
-echo "   MongoDB URI: $MONGO_URI"
-echo "   Database: $DB_NAME"
-echo ""
-echo "🔧 Useful Commands:"
-echo "   pm2 restart all    - Restart all services"
-echo "   pm2 stop all       - Stop all services"
-echo "   pm2 logs           - View logs"
-echo "   sudo nginx -t      - Test nginx config"
-echo "   sudo systemctl reload nginx - Reload nginx"
+echo "Use pm2 monit / pm2 logs to monitor."

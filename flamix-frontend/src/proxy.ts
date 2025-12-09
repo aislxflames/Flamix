@@ -1,15 +1,30 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
 
-// This function can be marked `async` if using `await` inside
-export function proxy(request: NextRequest) {
-  return NextResponse.redirect(new URL("/dashbaord", request.url));
-}
+const isPublicRoute = createRouteMatcher(['/login(.*)'])
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)'])
+export default clerkMiddleware(async (auth, req) => {
+  const { isAuthenticated, redirectToSignIn } = await auth();
+  const path = req.nextUrl.pathname;
 
-// Alternatively, you can use a default export:
-// export default function proxy(request: NextRequest) { ... }
+  if (!isAuthenticated && isProtectedRoute(req)) {
+    // Add custom logic to run before redirecting
+    return redirectToSignIn()
+  }
+    if (req.nextUrl.pathname === "/") {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+  } 
+    if (!isPublicRoute(req)) {
+    await auth.protect()
+  }
 
-// See "Matching Paths" below to learn more
+});
+
+
 export const config = {
-  matcher: "/login",
+  matcher: [
+    // Run on all routes except static files
+    "/((?!_next|.*\\..*).*)",
+    "/",
+  ],
 };

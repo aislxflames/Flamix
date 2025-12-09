@@ -86,7 +86,7 @@ export default function LogViewer({
         <div
           ref={scrollRef}
           className={cn(
-            "bg-muted text-muted-foreground p-4 rounded-lg border border-border",
+            "bg-background text-muted-foreground p-4 rounded-lg border border-border",
             "h-[65vh] overflow-y-auto font-mono text-sm leading-relaxed shadow-inner",
           )}
         >

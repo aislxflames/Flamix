@@ -21,7 +21,7 @@ export default function ProjectCard({
 
   const [open, setOpen] = useState(false);
   return (
-    <div className="relative w-full">
+    <div className="relative w-full bg-background/40">
       {/* GLOW */}
 
       {/* <Link href={href}> */}

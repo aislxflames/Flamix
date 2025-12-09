@@ -11,6 +11,8 @@ import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { IconDashboard, IconDeviceDesktop } from "@tabler/icons-react";
+import { ServerIcon } from "lucide-react";
+import { UserAvatar, UserButton, useUser } from "@clerk/nextjs";
 
 const navMainItems = [
   {
@@ -23,10 +25,16 @@ const navMainItems = [
     url: "/dashboard/projects",
     icon: IconDeviceDesktop,
   },
+    {
+    title: "Proxy",
+    url: "/dashboard/proxy",
+    icon: ServerIcon,
+  },
 ];
 
 export function AppSidebar(props: any) {
   const pathname = usePathname();
+  const {user} = useUser();
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -44,9 +52,9 @@ export function AppSidebar(props: any) {
       <SidebarFooter>
         <NavUser
           user={{
-            name: "shadcn",
-            email: "m@example.com",
-            avatar: "/avatars/shadcn.jpg",
+            name: `${user?.username}`,
+            email: `${user?.primaryEmailAddress?.emailAddress}`,
+            avatar: `${user?.imageUrl}`,
           }}
         />
       </SidebarFooter>

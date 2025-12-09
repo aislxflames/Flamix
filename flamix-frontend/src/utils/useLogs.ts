@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { socket } from "./socket.js";
+import { socket } from "./socket";
 
 export function useLogs(channel: string) {
   const [logs, setLogs] = useState<string[]>([]);
