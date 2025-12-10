@@ -22,15 +22,17 @@ npm install -g pnpm
 # Build backend
 echo "📦 Building backend..."
 cd /opt/flamix/backend
-pnpm install --prod
+pnpm install
 pnpm build
+pnpm prune --prod
 cd /opt/flamix
 
 # Build frontend
 echo "🎨 Building frontend..."
 cd /opt/flamix/flamix-frontend
-pnpm install --prod
+pnpm install
 pnpm build
+pnpm prune --prod
 cd /opt/flamix
 
 # Configure firewall
@@ -46,6 +48,7 @@ fi
 
 # Get Node path from NVM
 NODE_PATH=$(which node)
+PNPM_PATH=$(which pnpm)
 
 # Create systemd services
 echo "⚙️ Creating systemd services..."
@@ -83,8 +86,7 @@ User=www-data
 WorkingDirectory=/opt/flamix/flamix-frontend
 Environment=NODE_ENV=production
 Environment=PORT=3000
-Environment=PATH=/root/.nvm/versions/node/v20.18.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=$NODE_PATH /root/.nvm/versions/node/v20.18.1/bin/pnpm start
+ExecStart=$PNPM_PATH start
 Restart=always
 RestartSec=10
 
