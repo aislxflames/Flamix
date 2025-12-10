@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Flamix CLI Tool
+
+case "$1" in
+  update)
+    echo "🔄 Running Flamix update..."
+    /opt/flamix/update.sh
+    ;;
+  
+  restart)
+    echo "🔄 Restarting Flamix services..."
+    sudo systemctl restart flamix-daemon flamix-app
+    echo "✅ Services restarted"
+    ;;
+  
+  status)
+    echo "📊 Flamix Services Status:"
+    sudo systemctl status flamix-daemon flamix-app --no-pager
+    ;;
+  
+  logs)
+    if [ -z "$2" ]; then
+      echo "Usage: flamix logs [daemon|app]"
+      exit 1
+    fi
+    sudo journalctl -u flamix-$2 -f
+    ;;
+  
+  stop)
+    echo "🛑 Stopping Flamix services..."
+    sudo systemctl stop flamix-daemon flamix-app
+    echo "✅ Services stopped"
+    ;;
+  
+  start)
+    echo "▶️ Starting Flamix services..."
+    sudo systemctl start flamix-daemon flamix-app
+    echo "✅ Services started"
+    ;;
+  
+  *)
+    echo "Flamix CLI - Manage your Flamix deployment"
+    echo ""
+    echo "Usage: flamix <command>"
+    echo ""
+    echo "Commands:"
+    echo "  update    - Pull latest code, rebuild, and restart services"
+    echo "  restart   - Restart both backend and frontend services"
+    echo "  start     - Start both services"
+    echo "  stop      - Stop both services"
+    echo "  status    - Show services status"
+    echo "  logs      - View logs (usage: flamix logs [daemon|app])"
+    echo ""
+    echo "Examples:"
+    echo "  flamix update"
+    echo "  flamix logs daemon"
+    echo "  flamix restart"
+    ;;
+esac

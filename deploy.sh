@@ -100,6 +100,11 @@ sudo chmod +x /opt/flamix/backend/dist/server.js
 # Reload systemd
 sudo systemctl daemon-reload
 
+# Install flamix CLI command
+echo "🔧 Installing flamix CLI..."
+sudo cp /opt/flamix/flamix /usr/local/bin/flamix
+sudo chmod +x /usr/local/bin/flamix
+
 # Install auto-update service
 echo "🔄 Installing auto-update service..."
 sudo cp /opt/flamix/flamix-autoupdate.service /etc/systemd/system/
@@ -112,6 +117,7 @@ echo ""
 echo "🌐 Backend accessible on port 5000"
 echo "🌐 Frontend accessible on port 3000"
 echo "🔄 Auto-update enabled (checks every 5 minutes)"
+echo "🔧 CLI installed: run 'flamix' for commands"
 echo ""
 echo "To start services, run:"
 echo "sudo systemctl enable --now flamix-daemon"
