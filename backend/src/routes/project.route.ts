@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Router as RouterType } from "express";
 import {
   createProject,
   deleteProject,
@@ -7,7 +7,7 @@ import {
 } from "../controllers/project.controller.js";
 import containerRoute from "./container.route.js";
 
-const router = Router();
+const router: RouterType = Router();
 
 router.post("/project", createProject);
 router.get("/projects", getAllProject);

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Router as RouterType } from "express";
 import {
   createContainer,
   deleteContainer,
@@ -13,7 +13,7 @@ import {
 import fs from "fs";
 import path from "path";
 
-const router = Router();
+const router: RouterType = Router();
 
 router.get("/:projectName/containers", getAllContainer);
 router.get("/:projectName/container/:containerName", getContainer);
