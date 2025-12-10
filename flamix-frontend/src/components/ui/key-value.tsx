@@ -827,7 +827,7 @@ function KeyValueAdd(props: KeyValueAddProps) {
       }
 
       const newItem: KeyValueItemData = {
-        id: crypto.randomUUID(),
+        id: crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         key: "",
         value: "",
       };
