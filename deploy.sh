@@ -61,7 +61,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
+User=root
 WorkingDirectory=/opt/flamix/backend
 Environment=NODE_ENV=production
 Environment=HOST=0.0.0.0
@@ -82,7 +82,7 @@ After=network.target flamix-daemon.service
 
 [Service]
 Type=simple
-User=www-data
+User=root
 WorkingDirectory=/opt/flamix/flamix-frontend
 Environment=NODE_ENV=production
 Environment=PORT=3000
@@ -95,7 +95,6 @@ WantedBy=multi-user.target
 EOF
 
 # Set permissions
-sudo chown -R www-data:www-data /opt/flamix
 sudo chmod +x /opt/flamix/backend/dist/server.js
 
 # Reload systemd
