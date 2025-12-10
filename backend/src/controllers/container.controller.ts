@@ -33,6 +33,8 @@ export const createContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName } = req.params;
+    if (!projectName) return res.status(400).json({ success: false, message: "Project name required" });
+    
     let { name, image, env, ports, gitUrl, domains } = req.body;
 
     const project = await Project.findOne({ projectName });
@@ -70,6 +72,7 @@ export const deleteContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
+    if (!projectName || !containerName) return res.status(400).json({ success: false, message: "Missing parameters" });
 
     const project = await Project.findOne({ projectName });
     if (!project)
@@ -105,6 +108,7 @@ export const getAllContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName } = req.params;
+    if (!projectName) return res.status(400).json({ success: false, message: "Project name required" });
 
     const project = await Project.findOne({ projectName });
 
@@ -128,6 +132,7 @@ export const getContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
+    if (!projectName || !containerName) return res.status(400).json({ success: false, message: "Missing parameters" });
 
     const project = await Project.findOne({ projectName });
     if (!project)
@@ -154,6 +159,7 @@ export const startContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
+    if (!projectName || !containerName) return res.status(400).json({ success: false, message: "Missing parameters" });
 
     const project = await Project.findOne({ projectName });
     if (!project)
@@ -182,11 +188,11 @@ export const startContainer = async (req: Request, res: Response) => {
       message: "Container started successfully",
     });
   } catch (e) {
-    const project = await Project.findOne({
-      projectName: req.params.projectName,
-    });
-    if (project)
-      await updateStatus(project, req.params.containerName, "Stopped");
+    const { projectName, containerName } = req.params;
+    if (projectName && containerName) {
+      const project = await Project.findOne({ projectName });
+      if (project) await updateStatus(project, containerName, "Stopped");
+    }
 
     res.status(500).json({
       success: false,
@@ -200,6 +206,7 @@ export const stopContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
+    if (!projectName || !containerName) return res.status(400).json({ success: false, message: "Missing parameters" });
 
     const project = await Project.findOne({ projectName });
     if (!project)
@@ -237,6 +244,7 @@ export const installContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
+    if (!projectName || !containerName) return res.status(400).json({ success: false, message: "Missing parameters" });
 
     const project = await Project.findOne({ projectName });
     if (!project)
@@ -256,7 +264,9 @@ export const installContainer = async (req: Request, res: Response) => {
     await updateStatus(project, containerName, "Deploying");
 
     await runCmd(`rm -rf ${projectPath}`, channel);
-    await deployService.start(container.gitUrl, projectPath, channel);
+    if (container.gitUrl) {
+      await deployService.start(container.gitUrl, projectPath, channel);
+    }
 
     const domainList = container.domains || [];
 
@@ -267,7 +277,7 @@ export const installContainer = async (req: Request, res: Response) => {
       container.image,
       container.env,
       domainList,
-      container.ports?.[0]?.iPort,
+      container.ports?.[0]?.iPort || 80,
       projectPath,
       channel,
     );
@@ -292,6 +302,8 @@ export const updateContainer = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName, containerName } = req.params;
+    if (!projectName || !containerName) return res.status(400).json({ success: false, message: "Missing parameters" });
+    
     const { name, image, env, domains, ports } = req.body;
 
     const project = await Project.findOne({ projectName });
@@ -325,7 +337,7 @@ export const updateContainer = async (req: Request, res: Response) => {
       container.image,
       container.env,
       domainList,
-      container.ports?.[0]?.iPort,
+      container.ports?.[0]?.iPort || 80,
       projectPath,
     );
 

@@ -4,7 +4,7 @@ import { railPack } from "./railpack.service.js";
 
 class DeployService {
   async start(gitUrl: string, projectPath: string, channel: string) {
-    await gitService.clone(gitUrl, projectPath, channel);
+    await gitService.clone(gitUrl, channel, projectPath);
     await railPack.install();
     await railPack.build(projectPath, channel);
   }

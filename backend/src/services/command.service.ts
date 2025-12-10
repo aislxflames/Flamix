@@ -20,11 +20,14 @@ export async function runCmd(
   return run(
     cmd,
     (line: string) => {
+      // Initialize if not exists
+      if (!logStore[channel]) logStore[channel] = [];
+      
       // Save logs
       logStore[channel].push(line);
 
       // Limit to last 500 logs (optional)
-      if (logStore[channel].length > 500) logStore[channel].shift();
+      if (logStore[channel] && logStore[channel].length > 500) logStore[channel].shift();
 
       // Emit to all connected clients
       io.emit(channel, line);

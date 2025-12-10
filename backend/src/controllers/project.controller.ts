@@ -34,7 +34,8 @@ export const getProject = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName } = req.params;
-    const project = await Project.findOne({ projectName: projectName });
+    if (!projectName) return res.status(400).json({ success: false, message: "Project name required" });
+    const project = await Project.findOne({ projectName });
     res.send(project);
   } catch (err) { }
 };
@@ -43,6 +44,7 @@ export const deleteProject = async (req: Request, res: Response) => {
   try {
     connectDB();
     const { projectName } = req.params;
+    if (!projectName) return res.status(400).json({ success: false, message: "Project name required" });
     const project = await Project.deleteOne({ projectName });
     res.send({
       success: true,

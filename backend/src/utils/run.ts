@@ -12,6 +12,7 @@ export default function run(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const [cmd, ...args] = command.split(" ");
+    if (!cmd) return reject(new Error("Invalid command"));
 
     let logs = "";
 
@@ -25,18 +26,22 @@ export default function run(
     });
 
     // LIVE STDOUT
-    child.stdout.on("data", (data) => {
-      const text = data.toString();
-      logs += text;
-      if (onLiveLog) onLiveLog(text);
-    });
+    if (child.stdout) {
+      child.stdout.on("data", (data: Buffer) => {
+        const text = data.toString();
+        logs += text;
+        if (onLiveLog) onLiveLog(text);
+      });
+    }
 
     // LIVE STDERR
-    child.stderr.on("data", (data) => {
-      const text = data.toString();
-      logs += text;
-      if (onLiveLog) onLiveLog(text);
-    });
+    if (child.stderr) {
+      child.stderr.on("data", (data: Buffer) => {
+        const text = data.toString();
+        logs += text;
+        if (onLiveLog) onLiveLog(text);
+      });
+    }
 
     child.on("close", () => resolve(logs));
 

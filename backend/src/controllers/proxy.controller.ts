@@ -15,7 +15,7 @@ export const installProxy = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to install proxy.",
-      error: e?.message,
+      error: e instanceof Error ? e.message : String(e),
     });
   }
 };
@@ -32,7 +32,7 @@ export const stopProxy = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to stop proxy.",
-      error: e?.message,
+      error: e instanceof Error ? e.message : String(e),
     });
   }
 };
@@ -50,7 +50,7 @@ export const startProxy = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to start proxy.",
-      error: e?.message,
+      error: e instanceof Error ? e.message : String(e),
     });
   }
 };
