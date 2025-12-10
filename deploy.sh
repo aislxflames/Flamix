@@ -3,13 +3,21 @@ set -e
 
 echo "🚀 Flamix VPS Deployment Starting..."
 
-# Install Node.js 20.x
-echo "📥 Installing Node.js 20..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt update && sudo apt install -y nodejs
+# Install NVM
+echo "📥 Installing NVM..."
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# Load NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Install Node.js 20 using NVM
+echo "📦 Installing Node.js 20 via NVM..."
+nvm install 20
+nvm use 20
 
 # Install pnpm globally
-sudo npm install -g pnpm
+npm install -g pnpm
 
 # Build backend
 echo "📦 Building backend..."
@@ -25,21 +33,24 @@ pnpm install --prod
 pnpm build
 cd /opt/flamix
 
-# Configure firewall - block backend port from external access
+# Configure firewall
 echo "🔒 Configuring firewall..."
 if command -v ufw &> /dev/null; then
   sudo ufw allow 22/tcp 2>/dev/null || true
   sudo ufw allow 3000/tcp 2>/dev/null || true
-  sudo ufw deny 5000/tcp 2>/dev/null || true
+  sudo ufw allow 5000/tcp 2>/dev/null || true
   sudo ufw --force enable 2>/dev/null || echo "UFW not available, skipping firewall config"
 else
   echo "UFW not installed, skipping firewall config"
 fi
 
+# Get Node path from NVM
+NODE_PATH=$(which node)
+
 # Create systemd services
 echo "⚙️ Creating systemd services..."
 
-# Backend service (localhost only)
+# Backend service (publicly accessible)
 sudo tee /etc/systemd/system/flamix-daemon.service > /dev/null <<EOF
 [Unit]
 Description=Flamix Backend Service
@@ -50,9 +61,9 @@ Type=simple
 User=www-data
 WorkingDirectory=/opt/flamix/backend
 Environment=NODE_ENV=production
-Environment=HOST=127.0.0.1
+Environment=HOST=0.0.0.0
 Environment=PORT=5000
-ExecStart=/usr/bin/node dist/server.js
+ExecStart=$NODE_PATH dist/server.js
 Restart=always
 RestartSec=10
 
@@ -72,7 +83,8 @@ User=www-data
 WorkingDirectory=/opt/flamix/flamix-frontend
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/usr/bin/pnpm start
+Environment=PATH=/root/.nvm/versions/node/v20.18.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=$NODE_PATH /root/.nvm/versions/node/v20.18.1/bin/pnpm start
 Restart=always
 RestartSec=10
 
@@ -89,7 +101,7 @@ sudo systemctl daemon-reload
 
 echo "✅ Deployment complete!"
 echo ""
-echo "🔒 Backend secured on localhost:5000 (not accessible externally)"
+echo "🌐 Backend accessible on port 5000"
 echo "🌐 Frontend accessible on port 3000"
 echo ""
 echo "To start services, run:"
