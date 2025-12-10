@@ -9,25 +9,12 @@ sudo apt update && sudo apt install -y git
 # Clone repository to /opt/flamix
 echo "📥 Cloning Flamix repository..."
 sudo rm -rf /opt/flamix
-sudo git clone https://github.com/aislxflames/Flamix /opt/flamix
+sudo git clone https://github.com/aislxflames/Flamix /tmp/flamix
 
 # Copy only required files
 echo "📁 Setting up project structure..."
-sudo mkdir -p /tmp/flamix-build
-sudo cp -r /opt/flamix/flamix-frontend /tmp/flamix-build/
-sudo cp -r /opt/flamix/backend /tmp/flamix-build/
-sudo cp /opt/flamix/deploy.sh /tmp/flamix-build/
-sudo cp /opt/flamix/update.sh /tmp/flamix-build/
-sudo cp /opt/flamix/flamix /tmp/flamix-build/
-sudo cp /opt/flamix/flamix-autoupdate.service /tmp/flamix-build/
-sudo cp /opt/flamix/flamix-autoupdate.timer /tmp/flamix-build/
-
-# Replace /opt/flamix with clean structure
-sudo rm -rf /opt/flamix
-sudo mv /tmp/flamix-build /opt/flamix
-sudo chmod +x /opt/flamix/deploy.sh
-sudo chmod +x /opt/flamix/update.sh
-sudo chmod +x /opt/flamix/flamix
+cp -r /tmp/flamix/backend /opt/backend
+cp -r /tmp/flamix/flamix-frontend /opt/flamix-frontend
 
 # Run deployment
 echo "🚀 Running deployment..."

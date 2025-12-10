@@ -3,39 +3,74 @@ set -e
 
 echo "🚀 Flamix VPS Deployment Starting..."
 
-# Install NVM
-echo "📥 Installing NVM..."
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# --- Step 0: Ask user to fill required envs for frontend ---
+# Determine frontend directory (prefer /opt/flamix if present)
+if [ -d /opt/flamix/flamix-frontend ]; then
+  FRONTEND_DIR=/opt/flamix/flamix-frontend
+else
+  FRONTEND_DIR="$(pwd)/flamix-frontend"
+fi
 
-# Load NVM
+TEMPLATE="$FRONTEND_DIR/.env"
+mkdir -p "$(dirname "$TEMPLATE")"
+cat > "$TEMPLATE" <<'EOF'
+NEXT_PUBLIC_BACKEND_API=
+NEXT_PUBLIC_BACKEND_URL=
+
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=
+EOF
+
+echo "Please paste your frontend env values. The file will open in your editor."
+${EDITOR:-nano} "$TEMPLATE"
+
+# --- Helper: run a command quietly and show a spinner until it finishes ---
+run_quiet() {
+  local cmd="$1"
+  local log="/tmp/flamix_build.log"
+  rm -f "$log"
+  bash -lc "$cmd" > "$log" 2>&1 &
+  local pid=$!
+  local spin='|/-\\'
+  local i=0
+  printf "\rBuilding... %c" "${spin:i%4:1}"
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 0.1
+    i=$((i+1))
+    printf "\rBuilding... %c" "${spin:i%4:1}"
+  done
+  wait "$pid"
+  local status=$?
+  if [ $status -ne 0 ]; then
+    echo "\n❌ Build failed. See /tmp/flamix_build.log for details."
+    return $status
+  fi
+  echo "\r✅ Build finished.           "
+  return 0
+}
+
+# --- Install NVM (quiet) and load it ---
+curl -s -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash >/dev/null 2>&1 || true
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Install Node.js 20 using NVM
-echo "📦 Installing Node.js 20 via NVM..."
-nvm install 20
-nvm use 20
+# Install Node.js 20 and pnpm (do not show logs)
+nvm install 20 >/dev/null 2>&1 || true
+nvm use 20 >/dev/null 2>&1 || true
+npm install -g pnpm >/dev/null 2>&1 || true
 
-# Install pnpm globally
-npm install -g pnpm
+# Resolve absolute pnpm and node paths
+NODE_PATH=$(which node || echo "/usr/bin/node")
+PNPM_PATH=$(which pnpm || echo "/usr/bin/pnpm")
 
-# Build backend
-echo "📦 Building backend..."
-cd /opt/flamix/backend
-pnpm install
-pnpm build
-pnpm prune --prod
-cd /opt/flamix
+# --- Run backend+frontend builds quietly (single spinner) ---
+BUILD_CMD="cd /opt/flamix/backend && $PNPM_PATH install && $PNPM_PATH build && $PNPM_PATH prune --prod && cd /opt/flamix/flamix-frontend && $PNPM_PATH install && $PNPM_PATH build && $PNPM_PATH prune --prod"
+run_quiet "$BUILD_CMD"
 
-# Build frontend
-echo "🎨 Building frontend..."
-cd /opt/flamix/flamix-frontend
-pnpm install
-pnpm build
-pnpm prune --prod
-cd /opt/flamix
+# If build succeeded, continue with service setup and installation (kept visible)
 
-# Configure firewall
 echo "🔒 Configuring firewall..."
 if command -v ufw &> /dev/null; then
   sudo ufw allow 22/tcp 2>/dev/null || true
@@ -46,14 +81,9 @@ else
   echo "UFW not installed, skipping firewall config"
 fi
 
-# Get Node path from NVM
-NODE_PATH=$(which node)
-PNPM_PATH=$(which pnpm)
-
 # Create systemd services
 echo "⚙️ Creating systemd services..."
 
-# Backend service (publicly accessible)
 sudo tee /etc/systemd/system/flamix-daemon.service > /dev/null <<EOF
 [Unit]
 Description=Flamix Backend Service
@@ -74,7 +104,6 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# Frontend service
 sudo tee /etc/systemd/system/flamix-app.service > /dev/null <<EOF
 [Unit]
 Description=Flamix Frontend Service
@@ -94,31 +123,20 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# Set permissions
-sudo chmod +x /opt/flamix/backend/dist/server.js
-
-# Reload systemd
+sudo chmod +x /opt/flamix/backend/dist/server.js || true
 sudo systemctl daemon-reload
 
-# Install flamix CLI command
 echo "🔧 Installing flamix CLI..."
-sudo cp /opt/flamix/flamix /usr/local/bin/flamix
-sudo chmod +x /usr/local/bin/flamix
+sudo cp /opt/flamix/flamix /usr/local/bin/flamix || true
+sudo chmod +x /usr/local/bin/flamix || true
 
-# Install auto-update service
 echo "🔄 Installing auto-update service..."
-sudo cp /opt/flamix/flamix-autoupdate.service /etc/systemd/system/
-sudo cp /opt/flamix/flamix-autoupdate.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable flamix-autoupdate.timer
+sudo cp /opt/flamix/flamix-autoupdate.service /etc/systemd/system/ || true
+sudo cp /opt/flamix/flamix-autoupdate.timer /etc/systemd/system/ || true
+sudo systemctl daemon-reload || true
+sudo systemctl enable flamix-autoupdate.timer || true
 
 echo "✅ Deployment complete!"
-echo ""
-echo "🌐 Backend accessible on port 5000"
-echo "🌐 Frontend accessible on port 3000"
-echo "🔄 Auto-update enabled (checks every 5 minutes)"
-echo "🔧 CLI installed: run 'flamix' for commands"
-echo ""
 echo "To start services, run:"
 echo "sudo systemctl enable --now flamix-daemon"
 echo "sudo systemctl enable --now flamix-app"
