@@ -100,11 +100,20 @@ sudo chmod +x /opt/flamix/backend/dist/server.js
 # Reload systemd
 sudo systemctl daemon-reload
 
+# Install auto-update service
+echo "🔄 Installing auto-update service..."
+sudo cp /opt/flamix/flamix-autoupdate.service /etc/systemd/system/
+sudo cp /opt/flamix/flamix-autoupdate.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable flamix-autoupdate.timer
+
 echo "✅ Deployment complete!"
 echo ""
 echo "🌐 Backend accessible on port 5000"
 echo "🌐 Frontend accessible on port 3000"
+echo "🔄 Auto-update enabled (checks every 5 minutes)"
 echo ""
 echo "To start services, run:"
 echo "sudo systemctl enable --now flamix-daemon"
 echo "sudo systemctl enable --now flamix-app"
+echo "sudo systemctl start flamix-autoupdate.timer"
