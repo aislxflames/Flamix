@@ -12,16 +12,17 @@ import {
 } from "@/components/ui/card";
 
 export default function SignInForm() {
-  const { signIn, setSession, isLoaded } = useSignIn();
+  const { signIn, isLoaded } = useSignIn();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  if (!isLoaded) return null;
+  if (!isLoaded || !signIn) return null;
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!signIn) return;
     try {
       const result = await signIn.create({
         identifier: email,
@@ -29,16 +30,17 @@ export default function SignInForm() {
       });
 
       if (result.status === "complete") {
-        await setSession(result.createdSessionId);
+        window.location.href = "/dashboard";
       }
-    } catch (err) {
+    } catch (err: any) {
       setError(err.errors?.[0]?.message || "Something went wrong");
     }
   }
 
-  async function oauthLogin(provider) {
+  async function oauthLogin(provider: string) {
+    if (!signIn) return;
     await signIn.authenticateWithRedirect({
-      strategy: provider,
+      strategy: provider as any,
       redirectUrl: "/sso-callback",
       redirectUrlComplete: "/dashboard",
     });

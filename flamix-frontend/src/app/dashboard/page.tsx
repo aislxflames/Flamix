@@ -16,9 +16,11 @@ import {
   Bar,
 } from "recharts"
 
+type ChartData = { name: string; value: number }
+
 export default function Dashboard() {
-  const [cpuData, setCpuData] = useState([])
-  const [ramData, setRamData] = useState([])
+  const [cpuData, setCpuData] = useState<ChartData[]>([])
+  const [ramData, setRamData] = useState<ChartData[]>([])
 
   // Fake live data generator (replace with API later)
   useEffect(() => {
