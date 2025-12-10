@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { createContainer } from "@/utils/container";
+import { useRouter } from "next/navigation";
 
 interface CreateContainerDialogProps {
   open: boolean;
@@ -31,6 +32,8 @@ export default function CreateContainer({
   const [envText, setEnvText] = useState("NODE_ENV=PRODUCTION");
   const [port, setPort] = useState("3000");
   const [loading, setLoading] = useState(false);
+  
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,6 +60,7 @@ export default function CreateContainer({
 
     setLoading(false);
     setOpen(false);
+    router.refresh();
   };
 
   return (

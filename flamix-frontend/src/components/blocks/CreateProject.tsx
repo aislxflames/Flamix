@@ -29,11 +29,12 @@ export default function CreateProject({
 
   const router = useRouter();
 
-  const handelSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handelSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const name = projectName.toLowerCase().replace(/\s+/g, "-");
-    createProject(name);
+    await createProject(name);
     setOpen(false);
+    router.push(`/dashboard/projects`);
     router.refresh();
   };
 
