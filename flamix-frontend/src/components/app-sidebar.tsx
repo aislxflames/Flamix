@@ -26,7 +26,7 @@ const navMainItems = [
     icon: IconDeviceDesktop,
   },
     {
-    title: "Proxy",
+    title: "Reverse Proxy",
     url: "/dashboard/proxy",
     icon: ServerIcon,
   },

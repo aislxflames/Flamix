@@ -55,14 +55,16 @@ export function NavMain({
           {items.map((item) => {
             let isActive = false;
 
-            // ⭐ Dashboard active ONLY on exact "/dashboard"
             if (item.url === "/dashboard") {
               isActive = pathname === "/dashboard";
             }
 
-            // ⭐ Projects active on ANY sub-route
             if (item.url === "/dashboard/projects") {
               isActive = pathname.startsWith("/dashboard/projects");
+              isActive = pathname.startsWith("/dashboard/project");
+            }
+             if (item.url === pathname) {
+              isActive = true;
             }
 
             return (
@@ -70,10 +72,11 @@ export function NavMain({
                 <Link href={item.url}>
                   <SidebarMenuButton
                     tooltip={item.title}
-                    data-active={isActive ? "true" : "false"} // ⭐ required for Shadcn
+                    data-active={isActive ? "true" : "false"}
                     className={`
                       duration-200 ease-linear 
                       rounded-md px-2
+                      w-9/10
                       data-[active=true]:bg-secondary
                       data-[active=true]:text-secondary-foreground
                       data-[active=true]:font-semibold

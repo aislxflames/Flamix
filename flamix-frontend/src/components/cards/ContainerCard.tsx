@@ -29,9 +29,9 @@ export default function ContainerCard({
 
   // Format name
   const displayName = containerName
-    ? containerName.replace(/-/g, " ").toUpperCase()
-    : "UNKNOWN";
-
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, char => char.toUpperCase());
+    
   // Icon color based on status
   const iconColor: Record<string, string> = {
     stopped: "text-red-500",

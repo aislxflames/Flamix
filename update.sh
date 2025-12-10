@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔄 Flamix Auto-Update Starting..."
+echo "Flamix Auto-Update Starting..."
 
 # Load NVM
 export NVM_DIR="$HOME/.nvm"
@@ -19,7 +19,7 @@ cd /opt/flamix
 git fetch origin main
 git reset --hard origin/main
 
-# Restore .env files
+# Restore .env fileshttps://production.theflames.fun/
 echo "♻️ Restoring .env files..."
 cp /tmp/backend.env.backup /opt/flamix/backend/.env 2>/dev/null || true
 cp /tmp/frontend.env.backup /opt/flamix/flamix-frontend/.env 2>/dev/null || true
