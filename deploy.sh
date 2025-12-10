@@ -3,8 +3,10 @@ set -e
 
 echo "🚀 Flamix VPS Deployment Starting..."
 
-# Install dependencies
-sudo apt update && sudo apt install -y nodejs npm
+# Install Node.js 20.x
+echo "📥 Installing Node.js 20..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt update && sudo apt install -y nodejs
 
 # Install pnpm globally
 sudo npm install -g pnpm
@@ -50,7 +52,7 @@ WorkingDirectory=/opt/flamix/backend
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=5000
-ExecStart=/usr/bin/node dist/index.js
+ExecStart=/usr/bin/node dist/server.js
 Restart=always
 RestartSec=10
 
@@ -80,7 +82,7 @@ EOF
 
 # Set permissions
 sudo chown -R www-data:www-data /opt/flamix
-sudo chmod +x /opt/flamix/backend/dist/index.js
+sudo chmod +x /opt/flamix/backend/dist/server.js
 
 # Reload systemd
 sudo systemctl daemon-reload
