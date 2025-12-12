@@ -8,11 +8,16 @@ sudo apt update && sudo apt install -y git
 
 # Clone repository to /opt/flamix
 echo "📥 Cloning Flamix repository..."
-sudo rm -rf /opt/flamix
+sudo rm -rf /tmp/flamix
 sudo git clone https://github.com/aislxflames/Flamix /tmp/flamix
 
 # Copy only required files
 echo "📁 Setting up project structure..."
+
+mkdir -p /opt/flamix/backend
+mkdir -p /opt/flamix/flamix-frontend
+mkdir -p /opt/flamix/scripts
+
 cp -r /tmp/flamix/backend /opt/flamix/backend
 cp -r /tmp/flamix/flamix-frontend /opt/flamix/flamix-frontend
 cp -r /tmp/flamix/scripts /opt/flamix/scripts
