@@ -15,9 +15,14 @@ cp /opt/flamix/flamix-frontend/.env /tmp/frontend.env.backup 2>/dev/null || true
 
 # Pull latest code
 echo "📥 Pulling latest code..."
-cd /opt/flamix
+rm -rf /tmp/flamix
+cp -r /opt/flamix/.git /tmp/flamix/.git
+cd /tmp/flamix
 git fetch origin main
 git reset --hard origin/main
+
+echo "🎟️ Sending latest code to the main folder.."
+cp -r /tmp/flamix /opt/flamix
 
 # Restore .env fileshttps://production.theflames.fun/
 echo "♻️ Restoring .env files..."

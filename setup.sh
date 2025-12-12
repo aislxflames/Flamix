@@ -13,12 +13,14 @@ sudo git clone https://github.com/aislxflames/Flamix /tmp/flamix
 
 # Copy only required files
 echo "📁 Setting up project structure..."
-cp -r /tmp/flamix/backend /opt/backend
-cp -r /tmp/flamix/flamix-frontend /opt/flamix-frontend
+cp -r /tmp/flamix/backend /opt/flamix/backend
+cp -r /tmp/flamix/flamix-frontend /opt/flamix/flamix-frontend
+cp -r /tmp/flamix/scripts /opt/flamix/scripts
+cp -r /tmp/flamix/.git /opt/flamix/.git
 
 # Run deployment
 echo "🚀 Running deployment..."
-cd /opt/flamix && sudo ./deploy.sh
+cd /opt/flamix/scripts && sudo ./deploy.sh
 
 echo ""
 echo "🎉 Setup complete! Start services with:"

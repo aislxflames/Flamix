@@ -130,11 +130,11 @@ echo "🔧 Installing flamix CLI..."
 sudo cp /opt/flamix/flamix /usr/local/bin/flamix || true
 sudo chmod +x /usr/local/bin/flamix || true
 
-echo "🔄 Installing auto-update service..."
-sudo cp /opt/flamix/flamix-autoupdate.service /etc/systemd/system/ || true
-sudo cp /opt/flamix/flamix-autoupdate.timer /etc/systemd/system/ || true
-sudo systemctl daemon-reload || true
-sudo systemctl enable flamix-autoupdate.timer || true
+# echo "🔄 Installing auto-update service..."
+# sudo cp /opt/flamix/flamix-autoupdate.service /etc/systemd/system/ || true
+# sudo cp /opt/flamix/flamix-autoupdate.timer /etc/systemd/system/ || true
+# sudo systemctl daemon-reload || true
+# sudo systemctl enable flamix-autoupdate.timer || true
 
 echo "✅ Deployment complete!"
 echo "To start services, run:"
