@@ -27,29 +27,7 @@ echo "🚀 Flamix VPS Deployment Starting..."
 # ${EDITOR:-nano} "$TEMPLATE"
 
 # --- Helper: run a command quietly and show a spinner until it finishes ---
-run_quiet() {
-  local cmd="$1"
-  local log="/tmp/flamix_build.log"
-  rm -f "$log"
-  bash -lc "$cmd" > "$log" 2>&1 &
-  local pid=$!
-  local spin='|/-\\'
-  local i=0
-  printf "\rBuilding... %c" "${spin:i%4:1}"
-  while kill -0 "$pid" 2>/dev/null; do
-    sleep 0.1
-    i=$((i+1))
-    printf "\rBuilding... %c" "${spin:i%4:1}"
-  done
-  wait "$pid"
-  local status=$?
-  if [ $status -ne 0 ]; then
-    echo "\n❌ Build failed. See /tmp/flamix_build.log for details."
-    return $status
-  fi
-  echo "\r✅ Build finished.           "
-  return 0
-}
+
 
 # --- Install NVM (quiet) and load it ---
 curl -s -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash >/dev/null 2>&1 || true
@@ -65,9 +43,8 @@ npm install -g pnpm >/dev/null 2>&1 || true
 NODE_PATH=$(which node || echo "/usr/bin/node")
 PNPM_PATH=$(which pnpm || echo "/usr/bin/pnpm")
 
-# --- Run backend+frontend builds quietly (single spinner) ---
-BUILD_CMD="cd /opt/flamix/backend && $PNPM_PATH install && $PNPM_PATH build && $PNPM_PATH prune --prod && cd /opt/flamix/flamix-frontend && $PNPM_PATH install && $PNPM_PATH build && $PNPM_PATH prune --prod"
-run_quiet "$BUILD_CMD"
+cd /opt/flamix/backend && $PNPM_PATH install && $PNPM_PATH build && $PNPM_PATH prune --prod && cd /opt/flamix/flamix-frontend && $PNPM_PATH install && $PNPM_PATH build && $PNPM_PATH prune --prod
+
 
 # If build succeeded, continue with service setup and installation (kept visible)
 
