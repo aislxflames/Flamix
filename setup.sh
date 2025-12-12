@@ -23,10 +23,10 @@ cp -r /tmp/flamix/.git /opt/flamix
 
 # Run deployment
 echo "🚀 Running deployment..."
+chmod +x /opt/flamix/scripts/deploy.sh
 cd /opt/flamix/scripts && sudo ./deploy.sh
 
 echo ""
 echo "🎉 Setup complete! Start services with:"
 echo "sudo systemctl enable --now flamix-daemon"
 echo "sudo systemctl enable --now flamix-app"
-echo "sudo systemctl start flamix-autoupdate.timer"

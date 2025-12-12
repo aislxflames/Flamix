@@ -5,26 +5,26 @@ echo "🚀 Flamix VPS Deployment Starting..."
 
 # --- Step 0: Ask user to fill required envs for frontend ---
 # Determine frontend directory (prefer /opt/flamix if present)
-if [ -d /opt/flamix/flamix-frontend ]; then
-  FRONTEND_DIR=/opt/flamix/flamix-frontend
-else
-  FRONTEND_DIR="$(pwd)/flamix-frontend"
-fi
+# if [ -d /opt/flamix/flamix-frontend ]; then
+#   FRONTEND_DIR=/opt/flamix/flamix-frontend
+# else
+#   FRONTEND_DIR="$(pwd)/flamix-frontend"
+# fi
 
-TEMPLATE="$FRONTEND_DIR/.env"
-mkdir -p "$(dirname "$TEMPLATE")"
-cat > "$TEMPLATE" <<'EOF'
-NEXT_PUBLIC_BACKEND_API=
-NEXT_PUBLIC_BACKEND_URL=
+# TEMPLATE="$FRONTEND_DIR/.env"
+# mkdir -p "$(dirname "$TEMPLATE")"
+# cat > "$TEMPLATE" <<'EOF'
+# NEXT_PUBLIC_BACKEND_API=
+# NEXT_PUBLIC_BACKEND_URL=
 
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=
-EOF
+# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+# CLERK_SECRET_KEY=
+# NEXT_PUBLIC_CLERK_SIGN_IN_URL=
+# NEXT_PUBLIC_CLERK_SIGN_UP_URL=
+# EOF
 
-echo "Please paste your frontend env values. The file will open in your editor."
-${EDITOR:-nano} "$TEMPLATE"
+# echo "Please paste your frontend env values. The file will open in your editor."
+# ${EDITOR:-nano} "$TEMPLATE"
 
 # --- Helper: run a command quietly and show a spinner until it finishes ---
 run_quiet() {

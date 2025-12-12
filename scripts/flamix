@@ -5,12 +5,13 @@
 case "$1" in
   update)
     echo "🔄 Running Flamix update..."
-    /opt/flamix/update.sh
+    chmod +x /opt/flamix/scripts/update.sh
+    sudo /opt/flamix/scripts/update.sh
     ;;
   
   restart)
     echo "🔄 Restarting Flamix services..."
-    sudo systemctl restart flamix-daemon flamix-app
+    sudo systemctl restart --now flamix-daemon flamix-app
     echo "✅ Services restarted"
     ;;
   
