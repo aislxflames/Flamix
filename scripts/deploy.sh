@@ -127,7 +127,7 @@ sudo chmod +x /opt/flamix/backend/dist/server.js || true
 sudo systemctl daemon-reload
 
 echo "🔧 Installing flamix CLI..."
-sudo cp /opt/flamix/flamix /usr/local/bin/flamix || true
+sudo cp /opt/flamix/scripts/flamix /usr/local/bin/flamix || true
 sudo chmod +x /usr/local/bin/flamix || true
 
 # echo "🔄 Installing auto-update service..."
